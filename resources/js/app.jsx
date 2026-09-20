@@ -1,7 +1,6 @@
 import './bootstrap';
-
+import './bytestore';
 import React from 'react';
-import ReactDOM from 'react-dom/client';
 
 function App() {
     return (
@@ -14,5 +13,7 @@ function App() {
 const root = document.getElementById('react-app');
 
 if (root) {
-    ReactDOM.createRoot(root).render(<App />);
+    import('react-dom/client').then(({ createRoot }) => {
+        createRoot(root).render(<App />);
+    });
 }

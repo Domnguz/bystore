@@ -1,285 +1,136 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-@viteReactRefresh
-    @vite(['resources/css/app.css', 'resources/js/app.jsx'])
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Mi Tienda</title>
+    <title>@yield('title', 'ByteStore | Componentes para PC')</title>
+
+    @viteReactRefresh
+    @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 </head>
 
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="flex min-h-screen flex-col bg-gray-100 text-slate-900">
 
-@php
-    use Illuminate\Support\Facades\Auth;
-    use App\Models\Categoria;
+    @php
+        $categorias = $categorias ?? \App\Models\Categoria::all();
+    @endphp
 
-    $categorias = Categoria::all();
-@endphp
+    @include('partials.navbar')
 
-<!-- Navbar -->
-<nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-    <div class="max-w-7xl mx-auto flex justify-between items-center px-8 py-3">
+    <main class="w-full min-w-0 flex-grow">
+        {{-- Portada a todo el ancho --}}
+        @yield('banner')
 
-        <!-- Logo -->
-        <a href="/" class="flex items-center gap-2 group">
-            <div class="bg-blue-600 text-white w-9 h-9 rounded-lg flex items-center justify-center text-lg group-hover:bg-blue-700 transition duration-200">
-                🛒
-            </div>
-            <span class="text-gray-900 text-xl font-bold tracking-tight">Mi Tienda</span>
-        </a>
-
-        <!-- Menú -->
-        <div class="flex items-center gap-6">
-
-            <a href="/" class="text-sm text-gray-500 hover:text-blue-600 font-medium transition duration-200">
-                Inicio
-            </a>
-
-            <a href="/productos" class="text-sm text-gray-500 hover:text-blue-600 font-medium transition duration-200">
-                Productos
-            </a>
-
-            <!-- Dropdown Categorías -->
-            <div class="relative" id="wrapperCat">
-                <button id="btnDropCat"
-                    class="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600 font-medium transition duration-200">
-                    Categorías
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-
-                <div id="menuCategorias"
-                     class="hidden absolute top-full left-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1">
-                    @foreach($categorias as $categoria)
-                        <a href="/categoria/{{ $categoria->id }}"
-                           class="block px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                            {{ $categoria->nombre }}
-                        </a>
-                    @endforeach
+        {{-- Resto del contenido --}}
+        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+            @if(session('success'))
+                <div role="status" class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-900">
+                    {{ session('success') }}
                 </div>
-            </div>
-
-            <!-- Separador -->
-            <div class="w-px h-5 bg-gray-200"></div>
-
-           @if(Auth::check())
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
-                        <div class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                        </div>
-                        <a href="{{ route('profile') }}"
-                        class="text-sm text-gray-700 font-medium hover:text-blue-600">
-                            {{ Auth::user()->name }}
-                        </a>
-                    </div>
-
-                    <form action="/logout" method="POST" class="inline">
-                        @csrf
-                        <button type="submit"
-                                class="text-sm text-gray-400 hover:text-red-500 font-medium transition duration-200">
-                            Salir
-                        </button>
-                    </form>
-                </div>
-
-            @else
-                {{-- Esto es lo que te faltaba --}}
-                <a href="/login"
-                class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition duration-200">
-                    Login
-                </a>
             @endif
 
+            @if(session('error'))
+                <div role="alert" class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @yield('contenido')
         </div>
-    </div>
-</nav>
+    </main>
 
-<!-- Contenido -->
-<main class="w-full flex-grow">
-    @yield('banner')
-    <div class="max-w-7xl mx-auto py-10 px-6">
-        @yield('contenido')
-    </div>
-</main>
+    {{-- Avisos del carrito --}}
+    <div
+        id="avisoTienda"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        class="fixed bottom-24 left-4 right-4 z-30 hidden rounded-xl border border-blue-200 bg-white p-4 text-sm text-slate-800 shadow-lg sm:left-6 sm:right-auto sm:max-w-sm"
+    ></div>
 
-<!-- Carrito flotante -->
-<div class="fixed bottom-8 right-8 z-[60]">
-    <button id="abrirCarrito"
-        class="relative w-16 h-16 bg-blue-600 hover:bg-blue-700 rounded-full shadow-2xl flex items-center justify-center text-white text-3xl">
-        🛒
-        <span id="contadorCarrito"
-            class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-            {{ collect(session('carrito', []))->sum('cantidad') }}
-        </span>
-    </button>
-</div>
+    {{-- Botón del carrito --}}
+    <button
+    id="abrirCarrito"
+    type="button"
+    aria-label="Abrir carrito"
+    aria-haspopup="dialog"
+    aria-controls="carritoModal"
+    class="fixed bottom-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-xl transition-all duration-300 hover:bg-blue-700 sm:bottom-6 sm:right-6"
+>
+    <svg
+        width="25"
+        height="25"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+    >
+        <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 3h2l3 12h10l3-9H6"
+        />
+        <circle cx="9" cy="20" r="1"/>
+        <circle cx="18" cy="20" r="1"/>
+    </svg>
 
-<!-- Panel lateral del carrito -->
-<div id="overlayCarrito"
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden">
-</div>
-<div id="carritoModal"
- class="fixed top-0 right-0 h-full w-[400px]
- bg-white/70
- backdrop-blur-xl
- border-l border-white/30
- shadow-[0_0_40px_rgba(0,0,0,0.25)]
- z-50
- transform translate-x-full
- transition-all duration-500
- overflow-y-auto">
+    <span
+        id="contadorCarrito"
+        class="absolute -right-1 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-slate-900 px-1 text-xs font-bold text-white"
+    >
+        {{ collect(session('carrito', []))->sum('cantidad') }}
+    </span>
+</button>
 
-    <div class="flex justify-between items-center p-5 border-b border-white/30">
-        <h2 class="text-xl font-bold text-gray-800">
-            🛒 Mi Carrito
-        </h2>
-        <button id="cerrarCarrito"
-                class="text-2xl font-bold text-gray-700 hover:text-red-500 transition duration-300 hover:rotate-90">
-            ×
-        </button>
-    </div>
+    {{-- Carrito responsive --}}
+    <dialog
+        id="carritoModal"
+        aria-labelledby="tituloCarrito"
+        class="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-[400px] border-0 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-black/60"
+    >
+        <div class="flex h-full min-h-0 flex-col">
+            <div class="flex shrink-0 items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
+                <h2 id="tituloCarrito" class="text-xl font-bold">
+                    Mi carrito
+                </h2>
 
-    <div id="contenidoCarrito" class="p-5">
-        @include('partials.carrito-contenido')
-    </div>
-</div>
+                <button
+                    id="cerrarCarrito"
+                    type="button"
+                    autofocus
+                    aria-label="Cerrar carrito"
+                    class="flex h-11 w-11 items-center justify-center rounded-lg bg-gray-100 text-2xl hover:bg-gray-200"
+                >
+                    ×
+                </button>
+            </div>
 
-<!-- Footer -->
-<footer class="bg-gray-900 text-white text-center py-6 mt-10">
-    <p>© 2026 Mi Tienda. Todos los derechos reservados.</p>
-</footer>
+            <div id="contenidoCarrito" class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">
+                @include('partials.carrito-contenido')
+            </div>
+        </div>
+    </dialog>
 
-<!-- Script dropdown categorías -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const menu = document.getElementById('menuCategorias');
+    <footer class="mt-auto border-t border-slate-800 bg-slate-950 px-5 pb-28 pt-10 text-slate-400 sm:px-6">
+        <div class="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <a href="{{ url('/') }}" class="text-xl font-extrabold text-white">
+                    Byte<span class="text-blue-400">Store</span>
+                </a>
 
-    // Abrir/cerrar al hacer click en el botón
-    document.getElementById('btnDropCat').addEventListener('click', function(e) {
-        e.stopPropagation();
-        menu.classList.toggle('hidden');
-    });
+                <p class="mt-2 text-sm">
+                    Componentes para PC y servicio técnico.
+                </p>
+            </div>
 
-    // Cerrar al hacer click fuera
-    document.addEventListener('click', function() {
-        menu.classList.add('hidden');
-    });
-
-    // Evitar que clicks dentro del menú lo cierren
-    menu.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
-});
-</script>
-
-<!-- Script carrito -->
-<script>
-const abrirCarrito = document.getElementById('abrirCarrito');
-const cerrarCarrito = document.getElementById('cerrarCarrito');
-const carritoModal = document.getElementById('carritoModal');
-const overlayCarrito = document.getElementById('overlayCarrito');
-
-abrirCarrito.addEventListener('click', () => {
-    carritoModal.classList.remove('translate-x-full');
-    overlayCarrito.classList.remove('hidden');
-});
-
-cerrarCarrito.addEventListener('click', () => {
-    carritoModal.classList.add('translate-x-full');
-    overlayCarrito.classList.add('hidden');
-});
-
-overlayCarrito.addEventListener('click', () => {
-    carritoModal.classList.add('translate-x-full');
-    overlayCarrito.classList.add('hidden');
-});
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<!-- Script agregar al carrito -->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-
-    document.querySelectorAll('.form-agregar-carrito').forEach(form => {
-
-        form.addEventListener('submit', async function(e) {
-
-            e.preventDefault();
-
-            const id = this.getAttribute('data-id');
-
-            const response = await fetch(`/carrito/agregar/${id}`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': this.querySelector('[name=_token]').value
-                }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-
-                // Notificacion cuando le doy a comprar
-                Swal.fire({
-                    toast: true,
-                    position: 'top-start',
-                    icon: 'success',
-                    title: 'Producto agregado al carrito',
-                    showConfirmButton: false,
-                    timer: 2800,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.style.marginTop = '70px';
-                    }
-                });
-
-                const contador = document.getElementById('contadorCarrito');
-
-                if (contador) {
-                    contador.innerText = data.cantidad;
-                    contador.classList.add('scale-125');
-                    setTimeout(() => {
-                        contador.classList.remove('scale-125');
-                    }, 300);
-                }
-
-                // Abrir carrito
-                document.getElementById('carritoModal').classList.remove('translate-x-full');
-                document.getElementById('overlayCarrito').classList.remove('hidden');
-
-                // Actualizar contenido del carrito
-                fetch('/carrito/contenido')
-                    .then(res => res.text())
-                    .then(html => {
-                        document.getElementById('contenidoCarrito').innerHTML = html;
-                    });
-            }
-
-        });
-
-    });
-
-});
-</script>
+            <p class="text-sm">
+                © {{ date('Y') }} ByteStore. Todos los derechos reservados.
+            </p>
+        </div>
+    </footer>
 
 </body>
-@if(session('success'))
-
-<script>
-Swal.fire({
-    icon: 'success',
-    title: 'Pedido realizado',
-    text: '{{ session("success") }}',
-    confirmButtonColor: '#2563eb'
-});
-</script>
-
-@endif
 </html>

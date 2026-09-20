@@ -14,11 +14,17 @@ class Producto extends Model
         'descripcion',
         'precio',
         'stock',
-        'imagen'
+        'imagen',
     ];
 
     public function categoria()
     {
         return $this->belongsTo(Categoria::class);
+    }
+
+    public function imagenes()
+    {
+        return $this->hasMany(ProductoImagen::class)
+            ->orderBy('id');
     }
 }

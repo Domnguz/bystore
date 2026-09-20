@@ -1,135 +1,265 @@
+{{-- Navbar, carrito y footer compartidos con el catálogo. --}}
 @extends('layouts.app')
+
+@section('title', $categoria->nombre . ' | ByteStore')
+
+{{-- No incluimos la sección banner en esta página. --}}
 
 @section('contenido')
 
-<div class="bg-white rounded-2xl shadow-lg p-10 mb-8 text-center">
+    {{-- =====================================================
+        ENCABEZADO COMPACTO
+        Mantiene el estilo de "Todos los productos".
+    ===================================================== --}}
+    <header class="mb-4 border-b border-slate-200 pb-4 sm:mb-6 sm:pb-6">
 
-    <h1 class="text-5xl font-extrabold text-gray-800 mb-3">
-        {{ $categoria->nombre }}
-    </h1>
-
-    <p class="text-gray-500 text-lg">
-        Descubre nuestra colección de {{ strtolower($categoria->nombre) }}
-    </p>
-
-</div>
-
-<!-- Categorías -->
-<div class="flex justify-center gap-4 mb-10 flex-wrap">
-
-
-        <a href="/productos"
-        class="px-5 py-2 bg-white shadow rounded-lg hover:bg-gray-100 transition">
-            Todos
+        <a
+            href="{{ url('/productos') }}"
+            class="text-xs font-medium text-slate-500 hover:text-blue-600"
+        >
+            ← Volver a todos los productos
         </a>
 
-    @php
-        $categorias = App\Models\Categoria::all();
-    @endphp
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
 
-    @foreach($categorias as $cat)
+            <h1 class="min-w-0 break-words text-xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
+                {{ $categoria->nombre }}
+            </h1>
 
-<a href="/categoria/{{ $cat->id }}"
-   class="px-5 py-2 rounded-lg transition
-   {{ $cat->id == $categoria->id
-        ? 'bg-gray-800 text-white'
-        : 'bg-white shadow hover:bg-gray-100' }}">
-
-    {{ $cat->nombre }}
-
-</a>
-
-@endforeach
-
-</div>
-
-<!-- Productos -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-
-@forelse($productos as $producto)
-
-<div class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300">
-
-    <img src="{{ asset('storage/'.$producto->imagen) }}"
-         class="w-full h-64 object-cover">
-
-    <div class="p-5">
-
-        <h3 class="text-xl font-bold text-gray-800">
-            {{ $producto->nombre }}
-        </h3>
-
-        <p class="text-gray-500 mt-2">
-            {{ $producto->descripcion }}
-        </p>
-
-        <div class="mt-4">
-
-            <span class="text-3xl font-bold text-blue-600">
-                S/ {{ $producto->precio }}
+            <span class="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
+                {{ $productos->total() }}
+                {{ $productos->total() === 1 ? 'producto' : 'productos' }}
             </span>
 
         </div>
-        <form class="form-agregar-carrito" data-id="{{ $producto->id }}">
-            @csrf
 
-    @if($producto->stock > 0)
+    </header>
 
-        <button
-            type="submit"
-            class="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition">
 
-            Comprar
-
-        </button>
-
-        <p class="mt-2 text-sm text-green-600 font-semibold">
-            Stock disponible: {{ $producto->stock }}
+    {{-- =====================================================
+        CATEGORÍAS
+        En celular se pueden deslizar horizontalmente.
+    ===================================================== --}}
+    <nav
+        aria-label="Categorías de productos"
+        class="mb-5 min-w-0 sm:mb-7"
+    >
+        <p class="mb-2 text-xs text-slate-500 sm:hidden">
+            Desliza para ver las categorías →
         </p>
 
-    @else
+        <div class="flex gap-2 overflow-x-auto pb-2">
 
-        <button
-            type="button"
-            disabled
-            class="mt-5 w-full bg-gray-400 text-white py-3 rounded-xl font-bold cursor-not-allowed">
+            <a
+                href="{{ url('/productos') }}"
+                class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:border-blue-600 hover:text-blue-600 sm:px-4 sm:text-sm"
+            >
+                Todos
+            </a>
 
-            Agotado
+            {{--
+                Usamos $opcion para no sobrescribir $categoria,
+                que contiene la categoría seleccionada.
+            --}}
+            @foreach ($categorias as $opcion)
 
-        </button>
+                @php
+                    $seleccionada = $opcion->id == $categoria->id;
+                @endphp
 
-        <p class="mt-2 text-sm text-red-600 font-semibold">
-            Sin stock disponible
-        </p>
+                <a
+                    href="{{ url('/categoria/' . $opcion->id) }}"
+                    @if ($seleccionada) aria-current="page" @endif
+                    @class([
+                        'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-3 text-xs font-medium transition-colors sm:px-4 sm:text-sm',
+                        'border-blue-600 bg-blue-600 text-white' => $seleccionada,
+                        'border-slate-200 bg-white text-slate-600 hover:border-blue-600 hover:text-blue-600' => !$seleccionada,
+                    ])
+                >
+                    {{ $opcion->nombre }}
+                </a>
 
+            @endforeach
+
+        </div>
+    </nav>
+
+
+    {{-- =====================================================
+        PRODUCTOS
+        Celular: 2 columnas.
+        Tablet: 3 columnas.
+        PC: 4 columnas.
+
+        Aunque haya un solo producto, conserva el tamaño
+        de una tarjeta y no ocupa todo el ancho.
+    ===================================================== --}}
+    <div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+
+        @forelse ($productos as $producto)
+
+            <article class="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+
+                {{-- FOTO: completa y sin recortes. --}}
+                <a
+                    href="{{ route('tienda.productos.show', $producto->id) }}"
+                    target="_blank"
+                    rel="noopener"
+                    aria-label="Ver {{ $producto->nombre }} (abre otra pestaña)"
+                    class="relative block aspect-square w-full overflow-hidden bg-white"
+                >
+                    @if ($producto->imagen)
+
+                        <img
+                            src="{{ asset('storage/' . $producto->imagen) }}"
+                            alt="{{ $producto->nombre }}"
+                            loading="lazy"
+                            decoding="async"
+                            class="absolute inset-0 h-full w-full object-contain p-2 sm:p-3"
+                        >
+
+                    @else
+
+                        <div class="absolute inset-0 flex items-center justify-center bg-slate-50 p-3 text-center text-xs text-slate-500">
+                            Imagen no disponible
+                        </div>
+
+                    @endif
+                </a>
+
+
+                {{-- INFORMACIÓN BREVE --}}
+                <div class="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+
+                    <p class="truncate text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:text-xs">
+                        {{ $categoria->nombre }}
+                    </p>
+
+                    {{-- Nombre limitado visualmente a dos líneas. --}}
+                    <h2 class="mt-2 min-h-10 text-sm font-semibold leading-5 text-slate-900 sm:min-h-12 sm:text-base sm:leading-6">
+
+                        <a
+                            href="{{ route('tienda.productos.show', $producto->id) }}"
+                            target="_blank"
+                            rel="noopener"
+                            title="{{ $producto->nombre }}"
+                            class="line-clamp-2 break-words hover:text-blue-600"
+                        >
+                            {{ $producto->nombre }}
+
+                            <span class="sr-only">(abre otra pestaña)</span>
+                        </a>
+
+                    </h2>
+
+                    {{--
+                        No mostramos $producto->descripcion aquí.
+                        La descripción completa permanece en el detalle.
+                    --}}
+
+                    <div class="mt-auto pt-3">
+
+                        {{-- Precio con dos decimales. --}}
+                        <p class="text-base font-extrabold text-slate-950 sm:text-xl">
+                            S/ {{ number_format($producto->precio, 2) }}
+                        </p>
+
+                        {{-- Disponibilidad breve. --}}
+                        <p class="mt-2 text-[11px] font-medium leading-4 sm:text-xs">
+                            @if ($producto->stock > 10)
+                                <span class="text-slate-600">
+                                    Disponible
+                                </span>
+                            @elseif ($producto->stock > 0)
+                                <span class="text-slate-600">
+                                    Últimas unidades
+                                </span>
+                            @else
+                                <span class="text-slate-400">
+                                    Agotado
+                                </span>
+                            @endif
+                        </p>
+
+                        {{-- Acceso a fotos y especificaciones completas. --}}
+                        <a
+                            href="{{ route('tienda.productos.show', $producto->id) }}"
+                            target="_blank"
+                            rel="noopener"
+                            class="mt-3 flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-200 px-2 py-2 text-center text-xs font-semibold text-slate-700 transition-colors hover:border-blue-600 hover:text-blue-600 sm:text-sm"
+                        >
+                            Ver detalle
+                            <span class="sr-only">(abre otra pestaña)</span>
+                        </a>
+
+                        {{-- Conserva la conexión con el JavaScript del carrito. --}}
+                        <form
+                            class="form-agregar-carrito mt-2"
+                            data-id="{{ $producto->id }}"
+                            action="{{ url('/carrito/agregar/' . $producto->id) }}"
+                            method="POST"
+                        >
+                            @csrf
+
+                            @if ($producto->stock > 0)
+
+                                <button
+                                    type="submit"
+                                    class="flex min-h-11 w-full items-center justify-center rounded-lg bg-blue-600 px-2 py-2 text-center text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60 sm:text-sm"
+                                >
+                                    Agregar al carrito
+                                </button>
+
+                            @else
+
+                                <button
+                                    type="button"
+                                    disabled
+                                    class="flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-lg bg-slate-100 px-2 py-2 text-center text-xs font-semibold text-slate-400 sm:text-sm"
+                                >
+                                    Agotado
+                                </button>
+
+                            @endif
+                        </form>
+
+                    </div>
+                </div>
+
+            </article>
+
+        @empty
+
+            {{-- Mensaje cuando la categoría todavía no tiene productos. --}}
+            <div class="col-span-full rounded-xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center sm:py-12">
+
+                <h2 class="text-base font-semibold text-slate-900 sm:text-lg">
+                    Aún no hay productos en esta categoría
+                </h2>
+
+                <p class="mt-2 text-sm text-slate-500">
+                    Puedes explorar los componentes de las demás categorías.
+                </p>
+
+                <a
+                    href="{{ url('/productos') }}"
+                    class="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                    Ver todos los productos
+                </a>
+
+            </div>
+
+        @endforelse
+
+    </div>
+
+
+    {{-- PAGINACIÓN --}}
+    @if ($productos->hasPages())
+        <div class="mt-8 min-w-0 border-t border-slate-200 pt-6">
+            {{ $productos->links() }}
+        </div>
     @endif
-
-</form>
-
-    </div>
-
-</div>
-
-@empty
-
-<div class="col-span-4">
-
-    <div class="bg-white rounded-2xl shadow-lg p-10 text-center">
-
-        <h2 class="text-2xl font-bold text-gray-700">
-            No hay productos en esta categoría
-        </h2>
-
-        <p class="text-gray-500 mt-3">
-            Pronto agregaremos nuevos productos.
-        </p>
-
-    </div>
-
-</div>
-
-@endforelse
-
-</div>
 
 @endsection
