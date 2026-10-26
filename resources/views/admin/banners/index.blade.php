@@ -1,9 +1,9 @@
-@extends('adminlte::page')
+@extends('layouts.admin')
 
 @section('title', 'Banners | ByteStore')
 
 @section('content_header')
-    <h1>Banners del catálogo</h1>
+    @include('partials.admin-heading', ['titulo' => 'Banners del catálogo', 'descripcion' => 'Elige las imágenes que tus clientes verán al entrar a la tienda.'])
 @stop
 
 @section('content')
@@ -506,8 +506,8 @@
         }
 
         .foto-cuadro:hover {
-            border-color: #2563eb;
-            background: #eff6ff;
+            border-color: var(--bs-admin-brand);
+            background: #edf7fc;
         }
 
         .foto-cuadro-movil {
@@ -542,7 +542,7 @@
         }
 
         .foto-selector:focus-within .foto-cuadro {
-            outline: 2px solid #2563eb;
+            outline: 2px solid var(--bs-admin-brand);
             outline-offset: 3px;
         }
 

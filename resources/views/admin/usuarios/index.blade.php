@@ -1,9 +1,9 @@
-@extends('adminlte::page')
+@extends('layouts.admin')
 
 @section('title', 'Usuarios')
 
 @section('content_header')
-    <h1>Usuarios</h1>
+    @include('partials.admin-heading', ['titulo' => 'Usuarios', 'descripcion' => 'Consulta las cuentas de tus clientes y administra sus permisos.'])
 @stop
 
 @section('content')
@@ -23,8 +23,10 @@
     </div>
 
     <div class="card-body">
+        @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+        @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
-        <table class="table table-bordered table-hover">
+        <div class="table-responsive"><table class="table table-hover bs-admin-list-table">
 
             <thead class="thead-dark">
 
@@ -41,7 +43,7 @@
 
             <tbody>
 
-            @foreach($usuarios as $usuario)
+            @forelse($usuarios as $usuario)
 
                 <tr>
 
@@ -51,24 +53,11 @@
 
                         @if($usuario->foto)
 
-                        <img src="{{ asset('storage/'.$usuario->foto) }}"
-                            style="
-                                width:80px;
-                                height:80px;
-                                border-radius:10px;
-                                object-fit:cover;
-                                border:1px solid #ddd;
-                            ">
+                        <img src="{{ asset('storage/'.$usuario->foto) }}" alt="Foto de {{ $usuario->name }}" class="bs-admin-user-photo">
 
 
                         @else
-                        <img src="https://via.placeholder.com/80"
-                        style="
-                            width:80px;
-                            height:80px;
-                            border-radius:10px;
-                            object-fit:cover;
-                        ">
+                        <span class="bs-admin-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($usuario->name, 0, 1)) }}</span>
 
                         @endif
 
@@ -125,11 +114,14 @@
 
                 </tr>
 
-            @endforeach
+            @empty
+                <tr><td colspan="6" class="text-center text-muted py-4">No hay usuarios registrados.</td></tr>
+            @endforelse
 
             </tbody>
 
-        </table>
+        </table></div>
+        {{ $usuarios->links('pagination::bootstrap-4') }}
 
     </div>
 

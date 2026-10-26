@@ -1,9 +1,9 @@
-@extends('adminlte::page')
+@extends('layouts.admin')
 
 @section('title', 'Editar producto | ByteStore')
 
 @section('content_header')
-    <h1>Editar producto</h1>
+    @include('partials.admin-heading', ['titulo' => 'Editar producto', 'descripcion' => 'Actualiza la información, las fotos y el stock del producto.'])
 @stop
 
 @section('content')

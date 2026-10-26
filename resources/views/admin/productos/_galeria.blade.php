@@ -92,8 +92,8 @@
 
             .foto-carga:hover,
             .foto-carga:focus-within {
-                border-color: #2563eb;
-                background: #eff6ff;
+                border-color: var(--bs-admin-brand);
+                background: #edf7fc;
             }
 
             .foto-carga-input {
@@ -115,7 +115,7 @@
             }
 
             .foto-carga-texto strong {
-                color: #2563eb;
+                color: var(--bs-admin-brand);
                 font-size: 32px;
                 line-height: 1.2;
             }

@@ -15,17 +15,14 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('user_id')
-                  ->constrained()
-                  ->onDelete('cascade');
+            $table->foreignId('usuario_id')->constrained('users')->restrictOnDelete();
+            $table->dateTime('fecha');
 
             $table->decimal('total', 10, 2);
 
             $table->enum('estado', [
-                'pendiente',
-                'enviado',
-                'entregado'
-            ])->default('pendiente');
+                'Pendiente', 'Pagado', 'Enviado', 'Entregado', 'Rechazado',
+            ])->default('Pendiente');
 
             $table->timestamps();
 

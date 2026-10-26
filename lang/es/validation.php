@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'required' => 'El campo :attribute es obligatorio.',
+    'required_if' => 'El campo :attribute es obligatorio cuando :other es :value.',
+    'email' => 'Ingresa un correo válido en :attribute.',
+    'unique' => 'El valor de :attribute ya está registrado.',
+    'confirmed' => 'La confirmación de :attribute no coincide.',
+    'integer' => 'El campo :attribute debe ser un número entero.',
+    'numeric' => 'El campo :attribute debe ser un número.',
+    'decimal' => 'El campo :attribute debe tener un importe con hasta dos decimales.',
+    'digits' => 'El campo :attribute debe tener :digits dígitos.',
+    'regex' => 'El formato de :attribute no es válido.',
+    'in' => 'El valor de :attribute no está permitido.',
+    'exists' => 'El valor de :attribute no existe.',
+    'accepted' => 'Debes confirmar :attribute.',
+    'image' => 'El archivo :attribute debe ser una imagen.',
+    'mimes' => 'El archivo :attribute debe ser de tipo: :values.',
+    'uuid' => 'La referencia de :attribute no es válida. Revisa el formulario de nuevo.',
+    'boolean' => 'El campo :attribute debe indicar sí o no.',
+    'string' => 'El campo :attribute debe ser texto.',
+    'file' => 'El campo :attribute debe ser un archivo.',
+    'current_password' => 'La contraseña actual es incorrecta.',
+    'min' => ['numeric' => ':attribute debe ser al menos :min.', 'string' => ':attribute debe tener al menos :min caracteres.', 'array' => ':attribute debe contener al menos :min elementos.', 'file' => ':attribute debe pesar al menos :min KB.'],
+    'max' => ['numeric' => ':attribute no puede superar :max.', 'string' => ':attribute no puede superar :max caracteres.', 'array' => ':attribute no puede contener más de :max elementos.', 'file' => ':attribute no puede superar :max KB.'],
+    'password' => ['letters' => 'La contraseña debe incluir letras.', 'numbers' => 'La contraseña debe incluir números.'],
+    'attributes' => ['name' => 'nombre', 'email' => 'correo', 'password' => 'contraseña', 'current_password' => 'contraseña actual', 'rol' => 'rol', 'checkout_token' => 'pedido', 'pago_verificado' => 'la verificación del pago', 'respuesta_entregada' => 'la entrega de la respuesta'],
+];

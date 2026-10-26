@@ -1,17 +1,27 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="bs-storefront">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'ByteStore | Componentes para PC')</title>
+    <meta name="description" content="@yield('description', 'Componentes para PC y servicio técnico en ByteStore. Consulta productos, disponibilidad y opciones de entrega.')">
+    @if(request()->is('admin*', 'login', 'registro', 'verificar-correo*', 'olvide-contrasena', 'restablecer-contrasena*', 'checkout', 'carrito*', 'profile*', 'mis-pedidos*', 'reclamaciones*'))
+        <meta name="robots" content="noindex, nofollow">
+    @else
+        <link rel="canonical" href="{{ url()->current() }}">
+    @endif
+    <meta property="og:title" content="@yield('title', 'ByteStore | Componentes para PC')">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{{ asset('img/logo-bytestore.png') }}">
+    <meta property="og:url" content="{{ url()->current() }}">
 
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 </head>
 
-<body class="flex min-h-screen flex-col bg-gray-100 text-slate-900">
+<body id="inicio-pagina" class="@yield('body-class') flex min-h-screen flex-col bg-slate-50 text-slate-900">
 
     @php
         $categorias = $categorias ?? \App\Models\Categoria::all();
@@ -24,7 +34,7 @@
         @yield('banner')
 
         {{-- Resto del contenido --}}
-        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+        <div class="bs-page-content mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
             @if(session('success'))
                 <div role="status" class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-900">
                     {{ session('success') }}
@@ -51,39 +61,7 @@
     ></div>
 
     {{-- Botón del carrito --}}
-    <button
-    id="abrirCarrito"
-    type="button"
-    aria-label="Abrir carrito"
-    aria-haspopup="dialog"
-    aria-controls="carritoModal"
-    class="fixed bottom-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-xl transition-all duration-300 hover:bg-blue-700 sm:bottom-6 sm:right-6"
->
-    <svg
-        width="25"
-        height="25"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        aria-hidden="true"
-    >
-        <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M3 3h2l3 12h10l3-9H6"
-        />
-        <circle cx="9" cy="20" r="1"/>
-        <circle cx="18" cy="20" r="1"/>
-    </svg>
 
-    <span
-        id="contadorCarrito"
-        class="absolute -right-1 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-slate-900 px-1 text-xs font-bold text-white"
-    >
-        {{ collect(session('carrito', []))->sum('cantidad') }}
-    </span>
-</button>
 
     {{-- Carrito responsive --}}
     <dialog
@@ -108,29 +86,16 @@
                 </button>
             </div>
 
-            <div id="contenidoCarrito" class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">
+            <div id="contenidoCarrito" data-url="{{ url('/carrito/contenido') }}" class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">
                 @include('partials.carrito-contenido')
             </div>
         </div>
     </dialog>
 
-    <footer class="mt-auto border-t border-slate-800 bg-slate-950 px-5 pb-28 pt-10 text-slate-400 sm:px-6">
-        <div class="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <a href="{{ url('/') }}" class="text-xl font-extrabold text-white">
-                    Byte<span class="text-blue-400">Store</span>
-                </a>
-
-                <p class="mt-2 text-sm">
-                    Componentes para PC y servicio técnico.
-                </p>
-            </div>
-
-            <p class="text-sm">
-                © {{ date('Y') }} ByteStore. Todos los derechos reservados.
-            </p>
-        </div>
-    </footer>
+    {{-- Footer solo en las páginas de tienda e información al cliente. --}}
+    @if(request()->is('/', 'productos', 'productos/*', 'categoria/*', 'carrito', 'contacto', 'privacidad', 'reclamaciones', 'reclamaciones/*'))
+        @include('partials.footer')
+    @endif
 
 </body>
 </html>

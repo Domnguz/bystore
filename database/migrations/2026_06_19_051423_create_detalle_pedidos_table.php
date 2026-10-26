@@ -16,18 +16,18 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('pedido_id')
-                  ->constrained()
-                  ->onDelete('cascade');
+                ->constrained()
+                ->restrictOnDelete();
 
             $table->foreignId('producto_id')
-                  ->constrained()
-                  ->onDelete('cascade');
+                ->constrained()
+                ->restrictOnDelete();
 
             $table->integer('cantidad');
 
             $table->decimal('precio', 10, 2);
 
-            $table->timestamps();
+            $table->decimal('subtotal', 10, 2);
 
         });
     }

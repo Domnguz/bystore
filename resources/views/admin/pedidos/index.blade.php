@@ -1,306 +1,44 @@
-@extends('adminlte::page')
-
-@section('title', 'Gestión de Pedidos')
-
-@section('content_header') <h1> <i class="fas fa-shopping-bag"></i>
-Gestión de Pedidos </h1>
+@extends('layouts.admin')
+@section('title', 'Pedidos')
+@section('content_header')
+    @include('partials.admin-heading', ['titulo' => 'Gestión de pedidos', 'descripcion' => 'Revisa los pagos y acompaña cada pedido hasta su entrega.'])
 @stop
-
 @section('content')
-
-@if(session('success'))
-
-<div class="alert alert-success alert-dismissible fade show">
-
-<button type="button" class="close" data-dismiss="alert">
-    <span>&times;</span>
-</button>
-
-{{ session('success') }}
-
+@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+@if($errors->any())<div class="alert alert-danger">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+<div id="alertaPagosAdmin" class="alert alert-warning" @if(!$pagosPendientes) hidden @endif role="status">
+    <strong><span data-pagos-pendientes>{{ $pagosPendientes }}</span> pago(s) por verificar.</strong> Las constancias nuevas aparecen primero para que puedas revisarlas.
 </div>
-
-@endif
-
-<div class="row mb-3">
-
-<div class="col-md-4">
-
-    <div class="small-box bg-warning">
-
-        <div class="inner">
-            <h3>{{ $pedidos->where('estado', 'Pendiente')->count() }}</h3>
-            <p>Pedidos Pendientes</p>
+<form method="GET" action="{{ route('pedidos.index') }}" class="card card-body mb-3" role="search" aria-label="Filtrar pedidos">
+    <div class="form-row align-items-end">
+        <div class="form-group col-md-6 mb-md-0">
+            <label for="buscarPedidoAdmin">Buscar pedido o cliente</label>
+            <input id="buscarPedidoAdmin" type="search" name="buscar" value="{{ $filtros['buscar'] ?? '' }}" maxlength="100" class="form-control" placeholder="Número de pedido, nombre o correo">
         </div>
-
-        <div class="icon">
-            <i class="fas fa-clock"></i>
+        <div class="form-group col-md-3 mb-md-0">
+            <label for="estadoPedidoAdmin">Estado</label>
+            <select id="estadoPedidoAdmin" name="estado" class="form-control">
+                <option value="">Todos los estados</option>
+                @foreach(['Pendiente', 'Pagado', 'Enviado', 'Entregado', 'Rechazado'] as $estado)
+                    <option value="{{ $estado }}" @selected(($filtros['estado'] ?? '') === $estado)>{{ $estado }}</option>
+                @endforeach
+            </select>
         </div>
-
+        <div class="form-group col-md-3 mb-md-0">
+            <button type="submit" class="btn btn-primary mr-2">Filtrar</button>
+            <a href="{{ route('pedidos.index') }}" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
     </div>
-
+</form>
+<p class="text-muted" aria-live="polite"><span data-cantidad-resultados>{{ $cantidadResultados }}</span> pedido(s) encontrados.</p>
+<p class="text-muted small">Los pedidos y pagos se actualizan automáticamente cada 15 segundos.</p>
+<p class="font-weight-bold" aria-live="polite"><span data-total-pedidos>{{ $totalPedidos }}</span> pedido(s) registrados en la tienda.</p>
+<div class="row">
+    @foreach(['Pendiente' => 'warning', 'Pagado' => 'success', 'Enviado' => 'info', 'Entregado' => 'primary', 'Rechazado' => 'secondary'] as $estado => $color)
+        <div class="col-sm-6 col-xl"><div class="small-box bg-{{ $color }}"><div class="inner"><h3 data-pedido-count="{{ $estado }}">{{ $resumen[$estado] ?? 0 }}</h3><p>{{ $estado }}</p></div></div></div>
+    @endforeach
 </div>
-
-<div class="col-md-4">
-
-    <div class="small-box bg-success">
-
-        <div class="inner">
-            <h3>{{ $pedidos->where('estado', 'Pagado')->count() }}</h3>
-            <p>Pedidos Pagados</p>
-        </div>
-
-        <div class="icon">
-            <i class="fas fa-check-circle"></i>
-        </div>
-
-    </div>
-
-</div>
-
-<div class="col-md-4">
-
-    <div class="small-box bg-danger">
-
-        <div class="inner">
-            <h3>{{ $pedidos->where('estado', 'Rechazado')->count() }}</h3>
-            <p>Pedidos Rechazados</p>
-        </div>
-
-        <div class="icon">
-            <i class="fas fa-times-circle"></i>
-        </div>
-
-    </div>
-
-</div>
-
-</div>
-
-<div class="card shadow">
-
-<div class="card-header bg-dark text-white">
-
-    <h3 class="card-title">
-        <i class="fas fa-list"></i>
-        Lista de Pedidos
-    </h3>
-
-</div>
-
-<div class="card-body">
-
-    <table class="table table-hover table-bordered">
-
-        <thead class="thead-light">
-
-            <tr>
-                <th>ID</th>
-                <th>Cliente</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Detalle</th>
-                <th>Acciones</th>
-            </tr>
-
-        </thead>
-
-        <tbody>
-
-        @foreach($pedidos as $pedido)
-
-            <tr>
-
-                <td>#{{ $pedido->id }}</td>
-
-                <td>
-                    {{ $pedido->usuario->name ?? 'Sin usuario' }}
-                </td>
-
-                <td>
-                    <strong>
-                        S/ {{ number_format($pedido->total, 2) }}
-                    </strong>
-                </td>
-
-                <td>
-
-                    @if($pedido->estado == 'Pendiente')
-
-                        <span class="badge badge-warning">
-                            ⏳ Pendiente
-                        </span>
-
-                    @elseif($pedido->estado == 'Pagado')
-
-                        <span class="badge badge-success">
-                            ✅ Pagado
-                        </span>
-
-                    @elseif($pedido->estado == 'Enviado')
-
-                        <span class="badge badge-primary">
-                            🚚 Enviado
-                        </span>
-
-                    @elseif($pedido->estado == 'Entregado')
-
-                        <span class="badge badge-info">
-                            📦 Entregado
-                        </span>
-
-                    @elseif($pedido->estado == 'Rechazado')
-
-                        <span class="badge badge-danger">
-                            ❌ Rechazado
-                        </span>
-
-                    @endif
-
-                </td>
-
-                <td>
-
-                    <a href="{{ route('pedidos.show', $pedido->id) }}"
-                       class="btn btn-primary btn-sm">
-
-                        <i class="fas fa-eye"></i>
-                        Ver
-
-                    </a>
-
-                </td>
-
-                <td>
-
-                    @if($pedido->estado == 'Pendiente')
-
-                        <div class="d-flex">
-
-                            <form action="{{ route('pedidos.aprobar', $pedido->id) }}"
-                                  method="POST"
-                                  class="mr-2 form-aprobar">
-
-                                @csrf
-
-                                <button class="btn btn-success btn-sm">
-                                    Aprobar
-                                </button>
-
-                            </form>
-
-                            <form action="{{ route('pedidos.rechazar', $pedido->id) }}"
-                                  method="POST"
-                                  class="form-rechazar">
-
-                                @csrf
-
-                                <button class="btn btn-danger btn-sm">
-                                    Rechazar
-                                </button>
-
-                            </form>
-
-                        </div>
-
-                    @elseif($pedido->estado == 'Pagado')
-
-                        <span class="badge badge-success">
-                            Pagado
-                        </span>
-
-                    @elseif($pedido->estado == 'Enviado')
-
-                        <span class="badge badge-primary">
-                            Enviado
-                        </span>
-
-                    @elseif($pedido->estado == 'Entregado')
-
-                        <span class="badge badge-info">
-                            Entregado
-                        </span>
-
-                    @elseif($pedido->estado == 'Rechazado')
-
-                        <span class="badge badge-danger">
-                            Rechazado
-                        </span>
-
-                    @endif
-
-                </td>
-
-            </tr>
-
-        @endforeach
-
-        </tbody>
-
-    </table>
-
-</div>
-
-</div>
-
-@stop
-
-@section('js')
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-
-document.querySelectorAll('.form-aprobar').forEach(form => {
-
-    form.addEventListener('submit', function(e) {
-
-        e.preventDefault();
-
-        Swal.fire({
-            title: '¿Aprobar pedido?',
-            text: 'El stock se descontará automáticamente.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, aprobar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-
-            if (result.isConfirmed) {
-                form.submit();
-            }
-
-        });
-
-    });
-
-});
-
-document.querySelectorAll('.form-rechazar').forEach(form => {
-
-    form.addEventListener('submit', function(e) {
-
-        e.preventDefault();
-
-        Swal.fire({
-            title: '¿Rechazar pedido?',
-            text: 'Esta acción marcará el pedido como rechazado.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, rechazar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-
-            if (result.isConfirmed) {
-                form.submit();
-            }
-
-        });
-
-    });
-
-});
-
-</script>
-
+<div id="listaPedidosAdmin" data-revision="{{ $revision }}">{!! $lista !!}</div>
+<p id="estadoPagosAdmin" class="small text-muted" role="status" aria-live="polite"></p>
+@include('partials.admin-pagos-sync')
 @stop

@@ -8,6 +8,7 @@
     @include('partials.banner-carrusel', ['banners' => $banners])
 @endsection
 @section('contenido')
+    @include('partials.form-errors')
 
 
 
@@ -24,7 +25,7 @@
             Todos los productos
         </h1>
 
-        <span class="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
+        <span class="shrink-0 text-xs font-medium text-slate-500">
             {{ $productos->total() }}
             {{ $productos->total() === 1 ? 'producto' : 'productos' }}
         </span>
@@ -45,22 +46,23 @@
         shrink-0 evita que cada enlace se comprima.
         No se necesitan scripts para este desplazamiento.
     ===================================================== --}}
+    <div class="catalog-toolbar mb-6 sm:mb-8">
     <nav
         aria-label="Filtrar productos por categoría"
-        class="mb-6 min-w-0 sm:mb-8"
+        class="min-w-0 flex-1"
     >
 
         <p class="mb-3 text-xs text-slate-500 sm:hidden">
             Desliza para ver las categorías →
         </p>
 
-        <div class="flex gap-2 overflow-x-auto pb-3">
+        <div class="bs-category-tabs flex overflow-x-auto">
 
             {{-- Categoría activa: estamos viendo todos los productos. --}}
             <a
                 href="{{ url('/productos') }}"
                 aria-current="page"
-                class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-blue-600 px-5 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                class="bs-category-tab inline-flex min-h-11 shrink-0 items-center justify-center text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
                 Todos
             </a>
@@ -70,7 +72,7 @@
 
                 <a
                     href="{{ url('/categoria/' . $categoria->id) }}"
-                    class="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition-colors hover:border-blue-600 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                    class="bs-category-tab inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
                     {{ $categoria->nombre }}
                 </a>
@@ -79,6 +81,8 @@
 
         </div>
     </nav>
+    @include('partials.catalogo-filtros')
+    </div>
 
 
     {{-- =====================================================
@@ -90,17 +94,17 @@
 
         Este contenedor envuelve todas las tarjetas.
     ===================================================== --}}
-    <div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+    <div class="bs-product-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 
         {{-- Repite la tarjeta para cada producto de la página actual. --}}
         @forelse ($productos as $producto)
 
-            <article class="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+            <article class="bs-product flex min-w-0 flex-col">
 
                 {{-- =========================================
                     FOTO PRINCIPAL
 
-                    aspect-square crea un espacio cuadrado.
+                    La altura de la imagen se adapta al ancho de la pantalla.
                     object-contain muestra la imagen completa.
                     Al tocar la foto se abre el detalle.
                 ========================================= --}}
@@ -109,7 +113,7 @@
                     target="_blank"
                     rel="noopener"
                     aria-label="Ver {{ $producto->nombre }} (abre otra pestaña)"
-                    class="relative block aspect-square w-full overflow-hidden bg-white focus-visible:outline-2 focus-visible:outline-blue-600"
+                    class="bs-product-image relative block w-full overflow-hidden bg-white focus-visible:outline-2 focus-visible:outline-blue-600"
                 >
 
                     @if ($producto->imagen)
@@ -140,7 +144,7 @@
                     flex-1 permite aprovechar el espacio disponible.
                     Los tamaños aumentan en pantallas más grandes.
                 ========================================= --}}
-                <div class="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+                <div class="bs-product-info flex min-w-0 flex-1 flex-col">
 
                     {{-- Nombre de la categoría relacionada con el producto. --}}
                     <p class="truncate text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:text-xs">
@@ -175,7 +179,7 @@
                     <div class="mt-auto pt-3">
 
                         {{-- PRECIO: dos decimales y separador de miles. --}}
-                        <p class="text-base font-extrabold text-slate-950 sm:text-xl">
+                        <p class="bs-product-price text-base font-extrabold text-slate-950 sm:text-xl">
                             S/ {{ number_format($producto->precio, 2) }}
                         </p>
 
@@ -210,7 +214,7 @@
                             href="{{ route('tienda.productos.show', $producto->id) }}"
                             target="_blank"
                             rel="noopener"
-                            class="mt-3 flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-200 px-2 py-2 text-center text-xs font-semibold text-slate-700 transition-colors hover:border-blue-600 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:text-sm"
+                            class="bs-product-detail mt-3 inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-slate-600 transition-colors hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:text-sm"
                         >
                             Ver detalle
 
@@ -269,10 +273,14 @@
             </article>
             {{-- Fin de una tarjeta. --}}
 
+            @if ($loop->iteration === 4 && !$loop->last)
+                @include('partials.promo-tarjetas-graficas', ['categoriaGrafica' => $categoriaGrafica, 'graficaDestacada' => $graficaDestacada])
+            @endif
+
         @empty
 
             {{-- Se muestra cuando la consulta no contiene productos. --}}
-            <div class="col-span-full rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+            <div class="col-span-full py-12 text-center">
 
                 <h2 class="text-xl font-semibold text-slate-900">
                     Todavía no hay productos

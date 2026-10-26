@@ -6,6 +6,7 @@
 {{-- No incluimos la sección banner en esta página. --}}
 
 @section('contenido')
+    @include('partials.form-errors')
 
     {{-- =====================================================
         ENCABEZADO COMPACTO
@@ -26,7 +27,7 @@
                 {{ $categoria->nombre }}
             </h1>
 
-            <span class="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
+            <span class="shrink-0 text-xs font-medium text-slate-500">
                 {{ $productos->total() }}
                 {{ $productos->total() === 1 ? 'producto' : 'productos' }}
             </span>
@@ -40,19 +41,20 @@
         CATEGORÍAS
         En celular se pueden deslizar horizontalmente.
     ===================================================== --}}
+    <div class="catalog-toolbar mb-5 sm:mb-7">
     <nav
         aria-label="Categorías de productos"
-        class="mb-5 min-w-0 sm:mb-7"
+        class="min-w-0 flex-1"
     >
         <p class="mb-2 text-xs text-slate-500 sm:hidden">
             Desliza para ver las categorías →
         </p>
 
-        <div class="flex gap-2 overflow-x-auto pb-2">
+        <div class="bs-category-tabs flex overflow-x-auto">
 
             <a
                 href="{{ url('/productos') }}"
-                class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:border-blue-600 hover:text-blue-600 sm:px-4 sm:text-sm"
+                class="bs-category-tab inline-flex min-h-11 shrink-0 items-center justify-center text-xs font-medium transition-colors sm:text-sm"
             >
                 Todos
             </a>
@@ -71,9 +73,9 @@
                     href="{{ url('/categoria/' . $opcion->id) }}"
                     @if ($seleccionada) aria-current="page" @endif
                     @class([
-                        'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-3 text-xs font-medium transition-colors sm:px-4 sm:text-sm',
-                        'border-blue-600 bg-blue-600 text-white' => $seleccionada,
-                        'border-slate-200 bg-white text-slate-600 hover:border-blue-600 hover:text-blue-600' => !$seleccionada,
+                        'bs-category-tab inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap text-xs font-medium transition-colors sm:text-sm',
+                        'is-active' => $seleccionada,
+                        'text-slate-600 hover:text-blue-600' => !$seleccionada,
                     ])
                 >
                     {{ $opcion->nombre }}
@@ -83,6 +85,8 @@
 
         </div>
     </nav>
+    @include('partials.catalogo-filtros')
+    </div>
 
 
     {{-- =====================================================
@@ -94,11 +98,11 @@
         Aunque haya un solo producto, conserva el tamaño
         de una tarjeta y no ocupa todo el ancho.
     ===================================================== --}}
-    <div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+    <div class="bs-product-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 
         @forelse ($productos as $producto)
 
-            <article class="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+            <article class="bs-product flex min-w-0 flex-col">
 
                 {{-- FOTO: completa y sin recortes. --}}
                 <a
@@ -106,7 +110,7 @@
                     target="_blank"
                     rel="noopener"
                     aria-label="Ver {{ $producto->nombre }} (abre otra pestaña)"
-                    class="relative block aspect-square w-full overflow-hidden bg-white"
+                    class="bs-product-image relative block w-full overflow-hidden bg-white"
                 >
                     @if ($producto->imagen)
 
@@ -129,7 +133,7 @@
 
 
                 {{-- INFORMACIÓN BREVE --}}
-                <div class="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+                <div class="bs-product-info flex min-w-0 flex-1 flex-col">
 
                     <p class="truncate text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:text-xs">
                         {{ $categoria->nombre }}
@@ -160,7 +164,7 @@
                     <div class="mt-auto pt-3">
 
                         {{-- Precio con dos decimales. --}}
-                        <p class="text-base font-extrabold text-slate-950 sm:text-xl">
+                        <p class="bs-product-price text-base font-extrabold text-slate-950 sm:text-xl">
                             S/ {{ number_format($producto->precio, 2) }}
                         </p>
 
@@ -186,7 +190,7 @@
                             href="{{ route('tienda.productos.show', $producto->id) }}"
                             target="_blank"
                             rel="noopener"
-                            class="mt-3 flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-200 px-2 py-2 text-center text-xs font-semibold text-slate-700 transition-colors hover:border-blue-600 hover:text-blue-600 sm:text-sm"
+                            class="bs-product-detail mt-3 inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-slate-600 transition-colors hover:text-blue-600 sm:text-sm"
                         >
                             Ver detalle
                             <span class="sr-only">(abre otra pestaña)</span>
@@ -231,7 +235,7 @@
         @empty
 
             {{-- Mensaje cuando la categoría todavía no tiene productos. --}}
-            <div class="col-span-full rounded-xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center sm:py-12">
+            <div class="col-span-full py-10 text-center sm:py-12">
 
                 <h2 class="text-base font-semibold text-slate-900 sm:text-lg">
                     Aún no hay productos en esta categoría

@@ -15,7 +15,7 @@ class DetallePedido extends Model
         'producto_id',
         'cantidad',
         'precio',
-        'subtotal'
+        'subtotal', 'nombre_producto', 'sku_producto',
     ];
 
     public function pedido()

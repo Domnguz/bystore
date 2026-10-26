@@ -1,9 +1,9 @@
-@extends('adminlte::page')
+@extends('layouts.admin')
 
 @section('title', 'Editar Usuario')
 
 @section('content_header')
-<h1>Editar Usuario</h1>
+    @include('partials.admin-heading', ['titulo' => 'Editar usuario', 'descripcion' => 'Actualiza los datos y los permisos de esta cuenta.'])
 @stop
 
 @section('content')
@@ -14,7 +14,7 @@
 
 <form action="{{ route('usuarios.update',$usuario->id) }}"
       method="POST"
-      enctype="multipart/form-data">
+      enctype="multipart/form-data" class="bs-admin-user-form">
 
 @csrf
 @method('PUT')

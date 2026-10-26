@@ -1,9 +1,9 @@
-@extends('adminlte::page')
+@extends('layouts.admin')
 
 @section('title', 'Editar Categoría')
 
 @section('content_header')
-    <h1>Editar Categoría</h1>
+    @include('partials.admin-heading', ['titulo' => 'Editar categoría', 'descripcion' => 'Actualiza el nombre y la descripción de esta categoría.'])
 @stop
 
 @section('content')

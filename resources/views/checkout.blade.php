@@ -1,381 +1,128 @@
 @extends('layouts.app')
-
+@section('title', 'Preparar pedido | ByteStore')
+@section('body-class', 'bs-payment-page')
 @section('contenido')
-
-{{-- Calculamos el total del pedido y la cantidad de unidades. --}}
-@php
-    $cantidadTotal = collect($carrito)->sum('cantidad');
-
-    $total = collect($carrito)->sum(function ($item) {
-        return $item['precio'] * $item['cantidad'];
-    });
-@endphp
-
-<div class="mx-auto w-full max-w-6xl">
-
-    {{-- ENCABEZADO: enlace para volver y revisar el carrito. --}}
-    <header class="mb-6 sm:mb-8">
-        <a
-            href="{{ url('/carrito') }}"
-            class="inline-flex min-h-11 items-center gap-2 text-sm
-                   font-medium text-gray-500 transition hover:text-blue-600"
-        >
-            <svg
-                class="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                aria-hidden="true"
-            >
-                <path
-                    d="m12 19-7-7 7-7M5 12h14"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-            </svg>
-
-            Volver al carrito
-        </a>
-
-        <p class="mt-4 text-xs font-semibold uppercase tracking-widest text-blue-600">
-            ByteStore / Tu pedido
-        </p>
-
-        <h1 class="mt-2 text-2xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Revisa y confirma
-        </h1>
-
-        <p class="mt-2 text-sm leading-6 text-gray-500">
-            Comprueba los productos y las cantidades antes de confirmar.
-        </p>
-    </header>
-
-    {{-- ERRORES: mensajes enviados por el controlador. --}}
-    @if (session('error'))
-        <div
-            role="alert"
-            class="mb-5 rounded-xl border border-red-200
-                   bg-red-50 p-4 text-sm text-red-700"
-        >
-            {{ session('error') }}
-        </div>
-    @endif
-
-    {{-- ERRORES DE VALIDACIÓN: por ejemplo, datos que no sean válidos. --}}
-    @if ($errors->any())
-        <div
-            role="alert"
-            class="mb-5 rounded-xl border border-red-200
-                   bg-red-50 p-4 text-sm text-red-700"
-        >
-            <p class="font-semibold">
-                Revisa lo siguiente:
-            </p>
-
-            <ul class="mt-2 list-disc space-y-1 pl-5">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    @if (count($carrito) > 0)
-
-        {{-- DISTRIBUCIÓN:
-             Celular: una columna.
-             PC: productos a la izquierda y resumen a la derecha. --}}
-        <div class="grid items-start gap-5 lg:grid-cols-3 lg:gap-8">
-
-            <div class="min-w-0 lg:col-span-2">
-
-                {{-- PRODUCTOS QUE SE INCLUIRÁN EN EL PEDIDO. --}}
-                <section
-                    aria-labelledby="titulo-productos"
-                    class="overflow-hidden rounded-2xl border
-                           border-gray-200 bg-white"
-                >
-                    <div class="flex flex-wrap items-center justify-between
-                                gap-3 border-b border-gray-100 p-4 sm:p-5">
-                        <h2
-                            id="titulo-productos"
-                            class="text-base font-bold text-gray-900 sm:text-lg"
-                        >
-                            Tus productos
-                        </h2>
-
-                        <span class="rounded-full bg-blue-50 px-3 py-1.5
-                                     text-xs font-medium text-blue-700">
-                            {{ $cantidadTotal }}
-                            {{ $cantidadTotal == 1 ? 'unidad' : 'unidades' }}
-                        </span>
-                    </div>
-
-                    <div class="divide-y divide-gray-100">
-
-                        @foreach ($carrito as $item)
-
-                            @php
-                                $subtotal = $item['precio'] * $item['cantidad'];
-                            @endphp
-
-                            <article class="p-4 sm:p-5">
-                                <div class="flex items-start gap-3 sm:gap-5">
-
-                                    {{-- FOTO: tamaño uniforme sin recortar. --}}
-                                    <div class="flex h-20 w-20 shrink-0
-                                                items-center justify-center
-                                                overflow-hidden rounded-xl
-                                                border border-gray-100
-                                                bg-white sm:h-24 sm:w-24">
-                                        @if (!empty($item['imagen']))
-                                            <img
-                                                src="{{ asset('storage/' . $item['imagen']) }}"
-                                                alt="{{ $item['nombre'] }}"
-                                                loading="lazy"
-                                                decoding="async"
-                                                class="h-full w-full object-contain p-2"
-                                            >
-                                        @else
-                                            <span class="px-2 text-center
-                                                         text-xs text-gray-400">
-                                                Sin imagen
-                                            </span>
-                                        @endif
-                                    </div>
-
-                                    {{-- NOMBRE Y PRECIO UNITARIO. --}}
-                                    <div class="min-w-0 flex-1">
-                                        <h3 class="break-words text-sm font-semibold
-                                                   leading-5 text-gray-900
-                                                   sm:text-base sm:leading-6">
-                                            {{ $item['nombre'] }}
-                                        </h3>
-
-                                        <p class="mt-2 text-xs leading-5
-                                                  text-gray-500 sm:text-sm">
-                                            S/ {{ number_format($item['precio'], 2) }}
-                                            por unidad
-                                        </p>
-
-                                        {{-- Se ajusta a otra línea si falta espacio. --}}
-                                        <div class="mt-3 flex flex-wrap items-center
-                                                    justify-between gap-3">
-                                            <span class="rounded-lg bg-gray-100
-                                                         px-2.5 py-1.5 text-xs
-                                                         font-medium text-gray-600">
-                                                Cantidad: {{ $item['cantidad'] }}
-                                            </span>
-
-                                            <p class="text-sm font-bold
-                                                      text-gray-900 sm:text-base">
-                                                <span class="sr-only">
-                                                    Subtotal:
-                                                </span>
-
-                                                S/ {{ number_format($subtotal, 2) }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </article>
-
-                        @endforeach
-
-                    </div>
-                </section>
-
-                {{-- Permite corregir el pedido antes de enviarlo. --}}
-                <p class="mt-4 text-sm leading-6 text-gray-500">
-                    ¿Quieres quitar algún producto?
-
-                    <a
-                        href="{{ url('/carrito') }}"
-                        class="font-medium text-blue-600 underline
-                               underline-offset-4 hover:text-blue-700"
-                    >
-                        Editar mi carrito
-                    </a>
-                </p>
+<a href="{{ route('carrito') }}" class="text-sm text-blue-700 underline">← Volver al carrito</a>
+<h1 class="mb-3 mt-4 text-3xl font-bold">Prepara tu pedido</h1>
+<p class="mb-6 text-slate-600">Registra tu pedido y elige el método de pago disponible desde Mis pedidos. Si eliges envío, primero confirmaremos contigo el costo y el plazo por WhatsApp.</p>
+@include('partials.form-errors')
+<form action="{{ route('checkout') }}" method="POST" id="formConfirmarPedido" class="grid items-start gap-6 lg:grid-cols-3">
+    @csrf
+    <input type="hidden" name="checkout_token" value="{{ $token }}">
+    <div class="space-y-6 lg:col-span-2">
+        <section class="rounded-2xl border border-slate-200 bg-white p-5">
+            <h2 class="mb-4 text-lg font-bold">Datos del destinatario</h2>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label for="destinatario" class="block text-sm">Nombre completo
+                    <input id="destinatario" name="destinatario" required maxlength="150" autocomplete="name" value="{{ old('destinatario', trim(auth()->user()->name.' '.auth()->user()->apellidos)) }}" class="mt-1 w-full rounded-lg border border-slate-300 p-3">
+                </label>
+                <label for="telefono" class="block text-sm">Teléfono
+                    <input id="telefono" name="telefono" required maxlength="20" autocomplete="tel" value="{{ old('telefono', auth()->user()->telefono) }}" class="mt-1 w-full rounded-lg border border-slate-300 p-3">
+                </label>
             </div>
-
-            {{-- RESUMEN: permanece visible al desplazarse en PC. --}}
-            <aside
-                aria-labelledby="titulo-confirmacion"
-                class="min-w-0 rounded-2xl border border-gray-200
-                       bg-white p-5 sm:p-6 lg:sticky lg:top-24"
-            >
-                <h2
-                    id="titulo-confirmacion"
-                    class="text-lg font-bold text-gray-900"
-                >
-                    Resumen del pedido
-                </h2>
-
-                <dl class="mt-5 space-y-4">
-                    <div class="flex items-center justify-between gap-3 text-sm">
-                        <dt class="text-gray-500">
-                            Unidades
-                        </dt>
-
-                        <dd class="font-medium text-gray-900">
-                            {{ $cantidadTotal }}
-                        </dd>
-                    </div>
-
-                    <div class="flex flex-wrap items-center justify-between
-                                gap-3 border-t border-gray-100 pt-4">
-                        <dt class="font-semibold text-gray-900">
-                            Total
-                        </dt>
-
-                        <dd class="text-2xl font-bold tracking-tight text-blue-600">
-                            S/ {{ number_format($total, 2) }}
-                        </dd>
-                    </div>
-                </dl>
-
-                {{-- FORMULARIO:
-                     Conserva el POST original.
-                     @csrf protege el envío del formulario.
-                     El controlador procesa y registra el pedido. --}}
-                <form
-                    id="formConfirmarPedido"
-                    action="{{ url('/checkout') }}"
-                    method="POST"
-                    class="mt-6"
-                >
-                    @csrf
-
-                    <button
-                        id="botonConfirmarPedido"
-                        type="submit"
-                        class="flex min-h-12 w-full items-center justify-center
-                               gap-2 rounded-xl bg-blue-600 px-4 py-3
-                               text-sm font-semibold text-white transition
-                               hover:bg-blue-700 disabled:cursor-wait
-                               disabled:opacity-60"
-                    >
-                        <svg
-                            class="h-5 w-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="m5 12 4 4L19 6"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
-
-                        <span id="textoConfirmarPedido">
-                            Confirmar pedido
-                        </span>
-                    </button>
-
-                    <p
-                        id="estadoConfirmarPedido"
-                        role="status"
-                        class="mt-3 text-center text-xs leading-5 text-gray-500"
-                    ></p>
-                </form>
-
-                <a
-                    href="{{ url('/carrito') }}"
-                    class="mt-1 flex min-h-11 items-center justify-center
-                           text-sm font-medium text-gray-500
-                           transition hover:text-blue-600"
-                >
-                    Volver al carrito
-                </a>
-            </aside>
-        </div>
-
-    @else
-
-        {{-- ESTADO VACÍO: no muestra el botón para confirmar sin productos. --}}
-        <section class="rounded-2xl border border-dashed border-gray-300
-                        bg-white px-5 py-12 text-center sm:py-16">
-            <div class="mx-auto flex h-16 w-16 items-center justify-center
-                        rounded-full bg-blue-50 text-blue-600">
-                <svg
-                    class="h-8 w-8"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    aria-hidden="true"
-                >
-                    <path
-                        d="M3 3h2l2.4 12h11.2L21 7H6"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                    <circle cx="9" cy="20" r="1" />
-                    <circle cx="18" cy="20" r="1" />
-                </svg>
-            </div>
-
-            <h2 class="mt-5 text-xl font-bold text-gray-900 sm:text-2xl">
-                Todavía no tienes productos
-            </h2>
-
-            <p class="mt-2 text-sm leading-6 text-gray-500">
-                Agrega productos al carrito para preparar tu pedido.
-            </p>
-
-            <a
-                href="{{ url('/productos') }}"
-                class="mt-6 inline-flex min-h-12 items-center justify-center
-                       rounded-xl bg-blue-600 px-6 py-3 text-sm
-                       font-semibold text-white transition hover:bg-blue-700"
-            >
-                Explorar productos
-            </a>
         </section>
-
-    @endif
-</div>
-
-{{-- Evita pulsaciones repetidas mientras se envía el formulario.
-     El envío continúa normalmente hacia el controlador. --}}
+        <section class="rounded-2xl border border-slate-200 bg-white p-5">
+            <h2 class="mb-4 text-lg font-bold">¿Cómo recibirás tu compra?</h2>
+            <fieldset>
+                <legend class="mb-3 block text-sm font-semibold">Elige cómo recibir tu compra</legend>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @if(config('tienda.envio.habilitado'))
+                        <label class="group relative block cursor-pointer">
+                            <input class="peer sr-only" type="radio" name="metodo_entrega" value="envio" required data-metodo-entrega @checked(old('metodo_entrega', config('tienda.retiro.habilitado') ? 'retiro' : 'envio') === 'envio')>
+                            <span class="flex h-full min-h-32 gap-3 rounded-xl border border-slate-200 bg-white p-4 transition duration-200 group-hover:border-blue-300 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:ring-2 peer-checked:ring-blue-100 peer-focus-visible:ring-4 peer-focus-visible:ring-blue-200">
+                                <svg class="mt-1 h-8 w-8 shrink-0 text-slate-400 transition group-has-[:checked]:text-blue-700" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                                    <circle cx="8" cy="23" r="4" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="23" r="4" stroke="currentColor" stroke-width="2"/><path d="M8 23h7l-4-8h6l4 8m-5-8 2-4h5m-2 12h3l3-7h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11h7l2 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block font-semibold text-slate-900">Envío a domicilio</span>
+                                    <span class="mt-1 block text-sm leading-5 text-slate-600">Coordinamos contigo el costo y la entrega por WhatsApp.</span>
+                                </span>
+                                <svg class="mt-1 hidden h-5 w-5 shrink-0 text-blue-700 group-has-[:checked]:block" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.78-9.22a.75.75 0 0 0-1.06-1.06l-3.47 3.47-1.72-1.72a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.06 0l4-4Z" clip-rule="evenodd"/></svg>
+                            </span>
+                        </label>
+                    @endif
+                    @if(config('tienda.retiro.habilitado'))
+                        <label class="group relative block cursor-pointer">
+                            <input class="peer sr-only" type="radio" name="metodo_entrega" value="retiro" required data-metodo-entrega @checked(old('metodo_entrega', config('tienda.retiro.habilitado') ? 'retiro' : 'envio') === 'retiro')>
+                            <span class="flex h-full min-h-32 gap-3 rounded-xl border border-slate-200 bg-white p-4 transition duration-200 group-hover:border-blue-300 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:ring-2 peer-checked:ring-blue-100 peer-focus-visible:ring-4 peer-focus-visible:ring-blue-200">
+                                <svg class="mt-1 h-8 w-8 shrink-0 text-slate-400 transition group-has-[:checked]:text-blue-700" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                                    <path d="M5 13h22v14H5zM4 13l3-8h18l3 8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 13c0 2 3 2 3 0 0 2 4 2 4 0 0 2 4 2 4 0 0 2 4 2 4 0 0 2 3 2 3 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 27v-8h7v8m4-9h2v4h-2" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                </svg>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block font-semibold text-slate-900">Recojo en tienda</span>
+                                    <span class="mt-1 block text-sm leading-5 text-slate-600">Sin costo de envío. Coordinamos contigo la dirección y el horario.</span>
+                                </span>
+                                <svg class="mt-1 hidden h-5 w-5 shrink-0 text-blue-700 group-has-[:checked]:block" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.78-9.22a.75.75 0 0 0-1.06-1.06l-3.47 3.47-1.72-1.72a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.06 0l4-4Z" clip-rule="evenodd"/></svg>
+                            </span>
+                        </label>
+                    @endif
+                </div>
+            </fieldset>
+            <div id="detalleRetiro" class="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+                {{ config('tienda.retiro.direccion') ?: 'Coordinaremos contigo la dirección y el horario para recoger tu pedido.' }}
+            </div>
+            <p id="detalleEnvio" class="mt-3 text-sm text-slate-600" hidden>Deja tu dirección ahora o compártela con la tienda por WhatsApp.</p>
+            <div id="datosEnvio" class="mt-4 grid gap-4 sm:grid-cols-3">
+                @foreach(['departamento' => 'Departamento', 'provincia' => 'Provincia', 'distrito' => 'Distrito'] as $campo => $etiqueta)
+                    <label for="{{ $campo }}" class="block text-sm">{{ $etiqueta }} (opcional)
+                        <input id="{{ $campo }}" name="{{ $campo }}" value="{{ old($campo) }}" maxlength="100" data-envio class="mt-1 w-full rounded-lg border border-slate-300 p-3">
+                    </label>
+                @endforeach
+                <label for="direccion" class="block text-sm sm:col-span-3">Dirección de entrega (opcional)
+                    <input id="direccion" name="direccion" value="{{ old('direccion') }}" maxlength="255" autocomplete="street-address" data-envio class="mt-1 w-full rounded-lg border border-slate-300 p-3">
+                </label>
+                <label for="referencia" class="block text-sm sm:col-span-3">Referencia (opcional)
+                    <input id="referencia" name="referencia" value="{{ old('referencia') }}" maxlength="255" class="mt-1 w-full rounded-lg border border-slate-300 p-3">
+                </label>
+            </div>
+        </section>
+    </div>
+    <aside class="rounded-2xl border border-slate-200 bg-white p-5 lg:sticky lg:top-28">
+        <h2 class="text-lg font-bold">Resumen</h2>
+        @foreach($carrito as $item)
+            <div class="border-b border-slate-100 py-4"><p class="text-sm font-medium">{{ $item['nombre'] }}</p><p class="mt-1 text-sm text-slate-600">{{ $item['cantidad'] }} × S/ {{ number_format($item['precio'], 2) }}</p></div>
+        @endforeach
+        <div class="mt-5 flex justify-between gap-3 font-bold"><span>Productos</span><span>S/ {{ number_format(collect($carrito)->sum(fn($item) => $item['precio'] * $item['cantidad']), 2) }}</span></div>
+        <div class="mt-2 space-y-1 border-t border-slate-100 pt-3 text-sm text-slate-600">
+            <div class="flex justify-between gap-3"><span>Base imponible</span><span>S/ {{ number_format($igv['base_imponible'], 2) }}</span></div>
+            <div class="flex justify-between gap-3"><span>IGV incluido ({{ number_format((float) $igv['tasa'], 0) }}%)</span><span>S/ {{ number_format($igv['igv'], 2) }}</span></div>
+            <p class="text-xs">El IGV ya está incluido en los precios; no se suma otra vez.</p>
+        </div>
+        <p id="resumenEnvio" class="mt-3 text-sm text-slate-600"></p>
+        <p class="mt-3 text-sm text-slate-600">Las unidades se reservan durante {{ config('tienda.reserva_horas') }} horas. Registrar el pedido no confirma un pago.</p>
+        <button id="botonConfirmarPedido" class="mt-6 min-h-12 w-full rounded-lg bg-blue-600 p-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-60">Continuar al pago</button>
+        <p class="mt-3 text-center text-xs text-slate-500">Tu pedido se registrará en la tienda. El pago se confirma después de revisar tu constancia.</p>
+        <p id="estadoConfirmarPedido" role="status" class="mt-3 text-sm text-slate-500"></p>
+    </aside>
+</form>
 <script>
 (() => {
-    const formulario = document.getElementById('formConfirmarPedido');
+    const metodos = document.querySelectorAll('[data-metodo-entrega]');
+    if (!metodos.length) return;
+    const datosEnvio = document.getElementById('datosEnvio');
+    const detalleRetiro = document.getElementById('detalleRetiro');
+    const detalleEnvio = document.getElementById('detalleEnvio');
+    const resumenEnvio = document.getElementById('resumenEnvio');
+    const actualizar = () => {
+        const seleccionado = document.querySelector('[data-metodo-entrega]:checked')?.value;
+        const envio = seleccionado === 'envio';
+        datosEnvio.hidden = !envio;
+        detalleRetiro.hidden = envio;
+        detalleEnvio.hidden = !envio;
+        resumenEnvio.textContent = envio
+            ? 'Envío por coordinar en WhatsApp. Confirmaremos el total antes del pago.'
+            : 'Recojo en tienda: sin costo de envío (S/ 0.00).';
+    };
+    metodos.forEach(metodo => metodo.addEventListener('change', actualizar));
+    actualizar();
+    const form = document.getElementById('formConfirmarPedido');
     const boton = document.getElementById('botonConfirmarPedido');
-    const texto = document.getElementById('textoConfirmarPedido');
-    const estado = document.getElementById('estadoConfirmarPedido');
-
-    if (!formulario || !boton || !texto || !estado) return;
-
-    let enviando = false;
-
-    formulario.addEventListener('submit', (event) => {
-        if (enviando) {
-            event.preventDefault();
-            return;
-        }
-
-        enviando = true;
+    form.addEventListener('submit', event => {
+        if (boton.disabled) { event.preventDefault(); return; }
         boton.disabled = true;
-        texto.textContent = 'Confirmando…';
-        estado.textContent = 'Estamos enviando tu pedido.';
-        formulario.setAttribute('aria-busy', 'true');
+        document.getElementById('estadoConfirmarPedido').textContent = 'Registrando tu pedido…';
     });
-
-    // Restablece el botón si vuelves con la flecha del navegador.
-    window.addEventListener('pageshow', () => {
-        enviando = false;
-        boton.disabled = false;
-        texto.textContent = 'Confirmar pedido';
-        estado.textContent = '';
-        formulario.removeAttribute('aria-busy');
-    });
+    window.addEventListener('pageshow', () => { boton.disabled = false; });
 })();
 </script>
-
 @endsection

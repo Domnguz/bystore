@@ -1,9 +1,9 @@
-@extends('adminlte::page')
+@extends('layouts.admin')
 
 @section('title', 'Nueva Categoría')
 
 @section('content_header')
-    <h1>Nueva Categoría</h1>
+    @include('partials.admin-heading', ['titulo' => 'Nueva categoría', 'descripcion' => 'Crea una categoría para organizar tu catálogo.'])
 @stop
 
 @section('content')

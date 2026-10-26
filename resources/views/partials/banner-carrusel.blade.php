@@ -74,7 +74,7 @@
             position: relative;
             aspect-ratio: 3 / 1;
             overflow: hidden;
-            border-radius: 16px;
+            border-radius: 12px;
             background: #020617;
         }
 
@@ -138,7 +138,7 @@
 
         .bs-banner-puntos [aria-pressed="true"] span {
             width: 20px;
-            background: #2563eb;
+            background: var(--color-blue-600);
         }
 
         .bs-banner-pausa {
@@ -153,7 +153,7 @@
         }
 
         .bs-banner-controles button:focus-visible {
-            outline: 2px solid #2563eb;
+            outline: 2px solid var(--color-blue-600);
             outline-offset: -2px;
         }
 
@@ -170,7 +170,6 @@
 
     .bs-banners-ventana {
         aspect-ratio: 2 / 1;
-        border-radius: 12px;
     }
 
     .bs-banner img {

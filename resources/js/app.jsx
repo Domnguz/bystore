@@ -1,7 +1,8 @@
 import './bootstrap';
 import './bytestore';
 import React from 'react';
-
+import './ubicacion.js';
+import './registro.js';
 function App() {
     return (
         <div>

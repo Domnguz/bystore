@@ -1,9 +1,9 @@
-@extends('adminlte::page')
+@extends('layouts.admin')
 
 @section('title', 'Nuevo Usuario')
 
 @section('content_header')
-<h1>Nuevo Usuario</h1>
+    @include('partials.admin-heading', ['titulo' => 'Nuevo usuario', 'descripcion' => 'Registra una cuenta y asigna el acceso correspondiente.'])
 @stop
 
 @section('content')
@@ -14,7 +14,7 @@
 
         <form action="{{ route('usuarios.store') }}"
               method="POST"
-              enctype="multipart/form-data">
+              enctype="multipart/form-data" class="bs-admin-user-form">
 
             @csrf
 <div class="form-group">

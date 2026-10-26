@@ -21,13 +21,13 @@ class CategoriaController extends Controller
 
     public function store(Request $request)
     {
-        Categoria::create([
-            'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion
-        ]);
+        Categoria::create($request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'descripcion' => ['nullable', 'string', 'max:5000'],
+        ]));
 
         return redirect()->route('categorias.index')
-                         ->with('success', 'Categoría creada correctamente');
+            ->with('success', 'Categoría creada correctamente');
     }
 
     public function edit(string $id)
@@ -41,22 +41,25 @@ class CategoriaController extends Controller
     {
         $categoria = Categoria::findOrFail($id);
 
-        $categoria->nombre = $request->nombre;
-        $categoria->descripcion = $request->descripcion;
-
-        $categoria->save();
+        $categoria->update($request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'descripcion' => ['nullable', 'string', 'max:5000'],
+        ]));
 
         return redirect()->route('categorias.index')
-                         ->with('success', 'Categoría actualizada');
+            ->with('success', 'Categoría actualizada');
     }
 
     public function destroy(string $id)
     {
         $categoria = Categoria::findOrFail($id);
 
+        if ($categoria->productos()->exists()) {
+            return back()->withErrors(['categoria' => 'La categoría tiene productos. Reasígnalos antes de eliminarla.']);
+        }
         $categoria->delete();
 
         return redirect()->route('categorias.index')
-                         ->with('success', 'Categoría eliminada');
+            ->with('success', 'Categoría eliminada');
     }
 }

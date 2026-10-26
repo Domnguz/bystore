@@ -2,6 +2,7 @@
 @extends('layouts.app')
 
 @section('title', $producto->nombre . ' | ByteStore')
+@section('description', \Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', $producto->descripcion ?: $producto->nombre), 155))
 
 @section('contenido')
 
@@ -53,7 +54,7 @@
                     {{-- Fotografía grande.
                          object-contain muestra toda la imagen sin recortarla. --}}
                     <div class="min-w-0 flex-1 xl:order-2">
-                        <div class="relative aspect-square overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                        <div class="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-white">
 
                             <img
                                 id="fotoPrincipalProducto"
@@ -152,7 +153,7 @@
                 </div>
             @else
                 {{-- Se muestra cuando el producto no tiene fotos. --}}
-                <div class="flex aspect-square items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400">
+                <div class="flex aspect-square items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400">
                     Imagen no disponible
                 </div>
             @endif
@@ -168,9 +169,15 @@
             </p>
 
             {{-- Nombre completo del producto. --}}
+            @if($producto->marca || $producto->modelo)<p class="mt-3 text-sm text-slate-600">{{ $producto->marca }} {{ $producto->modelo }}</p>@endif
+            @if($producto->sku)<p class="mt-2 text-xs text-slate-500">SKU: {{ $producto->sku }}</p>@endif
             <h1 class="mt-3 break-words text-3xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl">
                 {{ $producto->nombre }}
             </h1>
+            <div class="mt-3 flex items-center gap-2" aria-label="Calificación de {{ number_format((float) $producto->resenas_avg_calificacion, 1) }} sobre 5, {{ $producto->resenas_count }} opiniones">
+                <span class="text-xl tracking-wide text-amber-500" aria-hidden="true">{{ str_repeat('★', (int) round((float) $producto->resenas_avg_calificacion)) }}{{ str_repeat('☆', 5 - (int) round((float) $producto->resenas_avg_calificacion)) }}</span>
+                <span class="text-sm text-slate-600">{{ $producto->resenas_count ? number_format((float) $producto->resenas_avg_calificacion, 1).' / 5 · '.$producto->resenas_count.' opiniones' : 'Aún sin calificaciones' }}</span>
+            </div>
 
             <p class="mt-4 text-sm text-slate-500">
                 Vendido por
@@ -182,7 +189,7 @@
             {{-- Precio y stock obtenidos de la base de datos. --}}
             <div class="mt-6 border-y border-slate-200 py-6">
                 <p class="text-sm text-slate-500">
-                    Precio
+                    Precio final (IGV incluido)
                 </p>
 
                 <p class="mt-2 text-4xl font-bold tracking-tight text-blue-600">
@@ -206,6 +213,12 @@
 
                 <p class="mt-3 whitespace-pre-line break-words leading-7 text-slate-600">{{ $producto->descripcion ?: 'Este producto todavía no tiene una descripción.' }}</p>
             </div>
+
+            @foreach(['especificaciones' => 'Especificaciones técnicas', 'compatibilidad' => 'Compatibilidad', 'garantia' => 'Garantía'] as $campo => $titulo)
+                @if($producto->{$campo})
+                    <section class="mb-5 border-t border-slate-200 pt-5"><h2 class="font-bold">{{ $titulo }}</h2><p class="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{{ $producto->{$campo} }}</p></section>
+                @endif
+            @endforeach
 
             {{-- Usa la ruta y la clase del carrito existente.
                  El JavaScript de la tienda procesa este formulario. --}}
@@ -244,6 +257,30 @@
 
     {{-- INTERACCIÓN DE LA GALERÍA:
          cambia la foto al pulsar miniaturas o flechas. --}}
+    <section class="mt-10 rounded-2xl border border-slate-200 bg-white p-5 sm:p-7" aria-labelledby="resenas-producto">
+        <div class="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+                <h2 id="resenas-producto" class="text-2xl font-bold">Opiniones de compradores</h2>
+                <p class="mt-1 text-sm text-slate-600">Solo pueden calificar quienes recibieron este producto en un pedido.</p>
+            </div>
+            @if($producto->resenas_count)
+                <p class="text-lg font-semibold text-amber-600">★ {{ number_format((float) $producto->resenas_avg_calificacion, 1) }} <span class="text-sm font-normal text-slate-500">({{ $producto->resenas_count }})</span></p>
+            @endif
+        </div>
+        @forelse($producto->resenas as $resena)
+            <article class="border-b border-slate-100 py-4 last:border-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="tracking-wide text-amber-500" aria-label="{{ $resena->calificacion }} de 5 estrellas">{{ str_repeat('★', $resena->calificacion) }}{{ str_repeat('☆', 5 - $resena->calificacion) }}</span>
+                    <span class="text-xs font-medium text-green-700">Compra verificada</span>
+                    <time class="text-xs text-slate-500">{{ $resena->created_at->timezone('America/Lima')->format('d/m/Y') }}</time>
+                </div>
+                @if($resena->comentario)<p class="mt-2 whitespace-pre-line text-slate-700">{{ $resena->comentario }}</p>@endif
+            </article>
+        @empty
+            <p class="py-5 text-slate-600">Todavía no hay opiniones para este producto.</p>
+        @endforelse
+    </section>
+
     <script>
         (() => {
             const imagen = document.getElementById('fotoPrincipalProducto');

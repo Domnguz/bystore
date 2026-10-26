@@ -10,6 +10,14 @@
     </div>
 @endif
 
+<div class="row mb-4">
+    @foreach(['sku' => 'SKU / código', 'marca' => 'Marca', 'modelo' => 'Modelo'] as $campo => $etiqueta)
+        <div class="col-md-4 form-group"><label for="{{ $campo }}">{{ $etiqueta }}</label><input id="{{ $campo }}" name="{{ $campo }}" value="{{ old($campo, $producto->{$campo} ?? '') }}" class="form-control"></div>
+    @endforeach
+    @foreach(['especificaciones' => 'Especificaciones técnicas', 'compatibilidad' => 'Compatibilidad', 'garantia' => 'Condiciones de garantía'] as $campo => $etiqueta)
+        <div class="col-md-4 form-group"><label for="{{ $campo }}">{{ $etiqueta }}</label><textarea id="{{ $campo }}" name="{{ $campo }}" rows="5" class="form-control">{{ old($campo, $producto->{$campo} ?? '') }}</textarea></div>
+    @endforeach
+</div>
 <div class="row">
     <div class="col-lg-7">
         <div class="form-group">
@@ -65,7 +73,7 @@
         <div class="row">
             <div class="col-sm-6">
                 <div class="form-group">
-                    <label for="precio">Precio (S/)</label>
+                    <label for="precio">Precio final (S/)</label>
 
                     <input
                         id="precio"
@@ -77,6 +85,7 @@
                         step="0.01"
                         required
                     >
+                    <small class="form-text text-muted">Este importe ya incluye el IGV; no lo sumaremos otra vez al cliente.</small>
                 </div>
             </div>
 
@@ -134,7 +143,7 @@
             @endisset
         </div>
 
-        @include('admin.productos._galeria')
+@include('admin.productos._galeria')
     </div>
 </div>
 

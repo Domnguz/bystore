@@ -12,6 +12,7 @@
 @endphp
 
 <div class="mx-auto w-full max-w-6xl">
+    @include('partials.form-errors')
 
     {{-- ENCABEZADO: pequeño en celular y más amplio en computadora. --}}
     <header class="mb-6 sm:mb-8">
@@ -143,10 +144,12 @@
                                     border-gray-100 pt-3">
 
                             <div class="flex flex-wrap items-center gap-3 sm:gap-5">
-                                <span class="rounded-lg bg-gray-100 px-3 py-2
-                                             text-xs font-medium text-gray-600">
-                                    Cantidad: {{ $item['cantidad'] }}
-                                </span>
+                                <form action="{{ url('/carrito/actualizar/'.$item['id']) }}" method="POST" class="flex flex-wrap items-center gap-2">
+                                    @csrf
+                                    <label for="cantidad-{{ $item['id'] }}" class="text-sm">Cantidad</label>
+                                    <input id="cantidad-{{ $item['id'] }}" type="number" name="cantidad" min="1" max="{{ min($item['stock'] ?? 99, 99) }}" value="{{ $item['cantidad'] }}" required class="w-20 rounded-lg border border-slate-300 p-2">
+                                    <button class="min-h-11 rounded-lg border border-blue-200 px-3 text-sm text-blue-700">Actualizar</button>
+                                </form>
 
                                 <div>
                                     <p class="text-xs text-gray-500">

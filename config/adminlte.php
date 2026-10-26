@@ -1,5 +1,13 @@
 <?php
 
+use JeroenNoten\LaravelAdminLte\Menu\Filters\ActiveFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\ClassesFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\DataFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\LangFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter;
+
 return [
 
     /*
@@ -48,7 +56,7 @@ return [
     */
 
     'google_fonts' => [
-        'allowed' => true,
+        'allowed' => false,
     ],
 
     /*
@@ -63,12 +71,12 @@ return [
     |
     */
 
-    'logo' => '<b>Byte</b>Store',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo' => 'ByteStore',
+    'logo_img' => 'img/ByteStore-sindescripcion.png',
+    'logo_img_class' => 'bs-admin-logo',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Admin Logo',
+    'logo_img_alt' => 'ByteStore',
 
     /*
     |--------------------------------------------------------------------------
@@ -110,7 +118,7 @@ return [
     */
 
     'preloader' => [
-        'enabled' => true,
+        'enabled' => false,
         'mode' => 'fullscreen',
         'img' => [
             'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
@@ -154,7 +162,7 @@ return [
 
     'layout_topnav' => null,
     'layout_boxed' => null,
-    'layout_fixed_sidebar' => null,
+    'layout_fixed_sidebar' => true,
     'layout_fixed_navbar' => null,
     'layout_fixed_footer' => null,
     'layout_dark_mode' => null,
@@ -190,15 +198,15 @@ return [
     |
     */
 
-    'classes_body' => '',
-    'classes_brand' => '',
-    'classes_brand_text' => '',
+    'classes_body' => 'bs-admin-shell',
+    'classes_brand' => 'bs-admin-brand',
+    'classes_brand_text' => 'sr-only',
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
-    'classes_sidebar' => 'sidebar-dark-primary elevation-4',
+    'classes_sidebar' => 'sidebar-dark-primary bs-admin-sidebar',
     'classes_sidebar_nav' => '',
-    'classes_topnav' => 'navbar-white navbar-light',
+    'classes_topnav' => 'navbar-white navbar-light bs-admin-navbar',
     'classes_topnav_nav' => 'navbar-expand',
     'classes_topnav_container' => 'container',
 
@@ -257,13 +265,13 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'home',
+    'dashboard_url' => 'admin',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
     'password_reset_url' => 'password/reset',
     'password_email_url' => 'password/email',
-    'profile_url' => false,
+    'profile_url' => 'profile',
     'disable_darkmode_routes' => false,
 
     /*
@@ -299,127 +307,20 @@ return [
     */
 
     'menu' => [
-    // Navbar items:
-    [
-        'type' => 'navbar-search',
-        'text' => 'search',
-        'topnav_right' => true,
+        ['header' => 'PRINCIPAL'],
+        ['text' => 'Panel', 'url' => 'admin', 'icon' => 'fas fa-tachometer-alt'],
+        ['text' => 'Pedidos', 'url' => 'admin/pedidos', 'icon' => 'fas fa-shopping-bag', 'active' => ['admin/pedidos*']],
+        ['header' => 'CATÁLOGO'],
+        ['text' => 'Productos', 'url' => 'admin/productos', 'icon' => 'fas fa-box', 'active' => ['admin/productos*']],
+        ['text' => 'Categorías', 'url' => 'admin/categorias', 'icon' => 'fas fa-tags', 'active' => ['admin/categorias*']],
+        ['text' => 'Banners', 'url' => 'admin/banners', 'icon' => 'fas fa-images'],
+        ['header' => 'CUENTA Y TIENDA'],
+        ['text' => 'Usuarios', 'url' => 'admin/usuarios', 'icon' => 'fas fa-users', 'active' => ['admin/usuarios*']],
+        ['text' => 'Mi cuenta', 'url' => 'profile', 'icon' => 'fas fa-user'],
+        ['text' => 'Datos de tienda', 'url' => 'admin/tienda', 'icon' => 'fas fa-store'],
+        ['text' => 'Reclamaciones', 'url' => 'admin/reclamaciones', 'icon' => 'fas fa-comment-alt'],
+        ['text' => 'Ver tienda', 'url' => '/', 'icon' => 'fas fa-store'],
     ],
-    [
-        'type' => 'fullscreen-widget',
-        'topnav_right' => true,
-    ],
-
-    // Sidebar items:
-    [
-        'type' => 'sidebar-menu-search',
-        'text' => 'search',
-    ],
-
-    [
-        'text' => 'Dashboard',
-        'url'  => 'admin',
-        'icon' => 'fas fa-tachometer-alt',
-    ],
-[
-    'text' => 'Categorías',
-    'url'  => 'admin/categorias',
-    'icon' => 'fas fa-tags',
-],
-
-
-[
-    'text' => 'Productos',
-    'url'  => 'admin/productos',
-    'icon' => 'fas fa-box',
-],
-
-[
-    'text' => 'Banners',
-    'url' => 'admin/banners',
-    'icon' => 'fas fa-images',
-    'active' => ['admin/banners*'],
-],
-
-
-[
-    'text' => 'Usuarios',
-    'url'  => 'admin/usuarios',
-    'icon' => 'fas fa-users',
-],
-
-    [
-        'text' => 'blog',
-        'url' => 'admin/blog',
-        'can' => 'manage-blog',
-    ],
-        ['header' => 'account_settings'],
-        [
-            'text' => 'profile',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-user',
-        ],
-        [
-            'text' => 'change_password',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-lock',
-        ],
-        [
-            'text' => 'multilevel',
-            'icon' => 'fas fa-fw fa-share',
-            'submenu' => [
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                    'submenu' => [
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                        ],
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                            'submenu' => [
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-            ],
-        ],
-        ['header' => 'labels'],
-        [
-            'text' => 'important',
-            'icon_color' => 'red',
-            'url' => '#',
-        ],
-        [
-            'text' => 'warning',
-            'icon_color' => 'yellow',
-            'url' => '#',
-        ],
-        [
-            'text' => 'information',
-            'icon_color' => 'cyan',
-            'url' => '#',
-        ],
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Menu Filters
@@ -433,13 +334,13 @@ return [
     */
 
     'filters' => [
-        JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\ActiveFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\ClassesFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\LangFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\DataFilter::class,
+        GateFilter::class,
+        HrefFilter::class,
+        SearchFilter::class,
+        ActiveFilter::class,
+        ClassesFilter::class,
+        LangFilter::class,
+        DataFilter::class,
     ],
 
     /*

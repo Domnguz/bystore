@@ -1,7 +1,164 @@
+function iniciarBuscadorCatalogo() {
+    document.querySelectorAll('[data-catalog-search]').forEach((buscador) => {
+        const toggle = buscador.querySelector('summary');
+        const campo = buscador.querySelector('input[type="search"]');
+        const autocomplete = buscador.querySelector('[data-catalog-autocomplete]');
+        const resultados = buscador.querySelector('[data-autocomplete-results]');
+        let temporizador;
+        let solicitud;
+
+        function ocultarSugerencias() {
+            resultados.hidden = true;
+            campo.setAttribute('aria-expanded', 'false');
+        }
+
+        function mostrarMensaje(texto) {
+            const mensaje = document.createElement('p');
+            mensaje.className = 'catalog-search-empty';
+            mensaje.setAttribute('role', 'status');
+            mensaje.textContent = texto;
+            resultados.replaceChildren(mensaje);
+            resultados.hidden = false;
+            campo.setAttribute('aria-expanded', 'true');
+        }
+
+        function mostrarProductos(productos, termino) {
+            resultados.replaceChildren();
+            if (!productos.length) {
+                mostrarMensaje(`No encontramos productos para “${termino}”.`);
+                return;
+            }
+
+            productos.forEach((producto) => {
+                const enlace = document.createElement('a');
+                enlace.className = 'catalog-search-suggestion';
+                enlace.href = producto.url;
+                enlace.setAttribute('role', 'option');
+                enlace.setAttribute('aria-selected', 'false');
+
+                if (producto.imagen) {
+                    const imagen = document.createElement('img');
+                    imagen.src = producto.imagen;
+                    imagen.alt = '';
+                    imagen.loading = 'lazy';
+                    imagen.className = 'catalog-search-suggestion-image';
+                    enlace.append(imagen);
+                } else {
+                    const icono = document.createElement('span');
+                    icono.className = 'catalog-search-suggestion-placeholder';
+                    icono.setAttribute('aria-hidden', 'true');
+                    icono.textContent = '▧';
+                    enlace.append(icono);
+                }
+
+                const detalle = document.createElement('span');
+                detalle.className = 'catalog-search-suggestion-detail';
+                const nombre = document.createElement('span');
+                nombre.className = 'catalog-search-suggestion-name';
+                nombre.textContent = producto.nombre;
+                const categoria = document.createElement('span');
+                categoria.className = 'catalog-search-suggestion-category';
+                categoria.textContent = producto.categoria || 'Producto';
+                detalle.append(nombre, categoria);
+
+                const precio = document.createElement('span');
+                precio.className = 'catalog-search-suggestion-price';
+                precio.textContent = `S/ ${Number(producto.precio).toFixed(2)}`;
+                enlace.append(detalle, precio);
+                resultados.append(enlace);
+            });
+
+            resultados.hidden = false;
+            campo.setAttribute('aria-expanded', 'true');
+        }
+
+        async function buscarSugerencias() {
+            const termino = campo.value.trim();
+            solicitud?.abort();
+            if (termino.length < 2) {
+                ocultarSugerencias();
+                return;
+            }
+
+            solicitud = new AbortController();
+            try {
+                const url = new URL(autocomplete.dataset.suggestionsUrl, window.location.origin);
+                url.searchParams.set('q', termino);
+                const respuesta = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    signal: solicitud.signal,
+                });
+                if (!respuesta.ok) throw new Error('No se pudieron cargar sugerencias.');
+                mostrarProductos(await respuesta.json(), termino);
+            } catch (error) {
+                if (error.name !== 'AbortError') ocultarSugerencias();
+            }
+        }
+
+        campo.addEventListener('input', () => {
+            window.clearTimeout(temporizador);
+            resultados.replaceChildren();
+            ocultarSugerencias();
+            temporizador = window.setTimeout(buscarSugerencias, 220);
+        });
+        campo.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown' && !resultados.hidden) {
+                event.preventDefault();
+                resultados.querySelector('a')?.focus();
+            } else if (event.key === 'Escape' && !resultados.hidden) {
+                event.preventDefault();
+                ocultarSugerencias();
+                campo.focus();
+            }
+        });
+        resultados.addEventListener('keydown', (event) => {
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+            const opciones = [...resultados.querySelectorAll('a')];
+            const actual = opciones.indexOf(document.activeElement);
+            const siguiente = event.key === 'ArrowDown' ? actual + 1 : actual - 1;
+            if (siguiente >= 0 && siguiente < opciones.length) {
+                event.preventDefault();
+                opciones[siguiente].focus();
+            } else if (event.key === 'ArrowUp' && actual === 0) {
+                event.preventDefault();
+                campo.focus();
+            }
+        });
+
+        function cerrarBuscador(devolverFoco = false) {
+            if (!buscador.open) return;
+            solicitud?.abort();
+            ocultarSugerencias();
+            buscador.open = false;
+            if (devolverFoco) toggle.focus();
+        }
+
+        buscador.addEventListener('toggle', (event) => {
+            if (event.target !== buscador) return;
+            toggle.setAttribute('aria-label', buscador.open ? 'Cerrar buscador de productos' : 'Abrir buscador de productos');
+            if (buscador.open) campo.focus({ preventScroll: true });
+        });
+
+        buscador.querySelector('[data-search-close]').addEventListener('click', () => cerrarBuscador(true));
+        document.addEventListener('click', (event) => {
+            if (!buscador.contains(event.target)) cerrarBuscador();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && buscador.open) {
+                event.preventDefault();
+                cerrarBuscador(true);
+            }
+        });
+    });
+}
+
 function iniciarByteStore() {
     const menuToggle = document.getElementById('menuToggle');
     const menu = document.getElementById('menuPrincipal');
     const categorias = document.getElementById('categoriasDropdown');
+    const cuenta = document.getElementById('cuentaDropdown');
+    const fondoMenu = document.getElementById('menuBackdrop');
+    const escritorio = window.matchMedia('(min-width: 1024px)');
 
     const carrito = document.getElementById('carritoModal');
     const abrir = document.getElementById('abrirCarrito');
@@ -13,7 +170,10 @@ function iniciarByteStore() {
     // MENÚ PRINCIPAL
 
     function cerrarMenu() {
-        menu?.classList.add('hidden');
+        menu?.classList.remove('is-open');
+        fondoMenu?.classList.remove('is-open');
+        document.body.classList.remove('bs-menu-open');
+        if (menu) menu.inert = !escritorio.matches;
 
         menuToggle?.setAttribute('aria-expanded', 'false');
         menuToggle?.setAttribute('aria-label', 'Abrir menú');
@@ -21,14 +181,30 @@ function iniciarByteStore() {
         if (categorias) {
             categorias.open = false;
         }
+        if (cuenta) cuenta.open = false;
     }
 
     if (menuToggle && menu) {
+        cerrarMenu();
+        document.addEventListener('bytestore:cerrar-menu', cerrarMenu);
+        fondoMenu?.addEventListener('click', cerrarMenu);
+
         menuToggle.addEventListener('click', () => {
             const abierto =
                 menuToggle.getAttribute('aria-expanded') !== 'true';
 
-            menu.classList.toggle('hidden', !abierto);
+            if (!abierto) {
+                cerrarMenu();
+                return;
+            }
+
+            menu.inert = false;
+            menu.classList.add('is-open');
+            fondoMenu?.classList.add('is-open');
+            document.body.classList.add('bs-menu-open');
+            if (cuenta && !escritorio.matches) cuenta.open = true;
+            const ubicacion = document.getElementById('selectorUbicacion');
+            if (ubicacion) ubicacion.open = false;
 
             menuToggle.setAttribute(
                 'aria-expanded',
@@ -52,6 +228,9 @@ function iniciarByteStore() {
             if (categorias && !categorias.contains(event.target)) {
                 categorias.open = false;
             }
+            if (cuenta && !cuenta.contains(event.target) && escritorio.matches) {
+                cuenta.open = false;
+            }
         });
 
         menu.querySelectorAll('a').forEach((enlace) => {
@@ -59,7 +238,32 @@ function iniciarByteStore() {
         });
 
         document.addEventListener('keydown', (event) => {
+            if (event.defaultPrevented || carrito?.open) return;
+
+            if (event.key === 'Tab' && !escritorio.matches && menu.classList.contains('is-open')) {
+                const controles = [menuToggle, ...menu.querySelectorAll('a, button, summary')]
+                    .filter((control) => control.getClientRects().length > 0 && !control.closest('[inert]'));
+                const primero = controles[0];
+                const ultimo = controles.at(-1);
+                if (event.shiftKey && document.activeElement === primero) {
+                    event.preventDefault();
+                    ultimo?.focus();
+                } else if (!event.shiftKey && document.activeElement === ultimo) {
+                    event.preventDefault();
+                    primero.focus();
+                }
+                return;
+            }
+
             if (event.key !== 'Escape') return;
+
+            const desplegable = document.activeElement?.closest('.bs-nav-dropdown');
+            if (desplegable?.open) {
+                event.preventDefault();
+                desplegable.open = false;
+                desplegable.querySelector('summary').focus();
+                return;
+            }
 
             const estabaAbierto =
                 menuToggle.getAttribute('aria-expanded') === 'true';
@@ -67,12 +271,22 @@ function iniciarByteStore() {
             cerrarMenu();
 
             if (estabaAbierto && !carrito?.open) {
+                event.preventDefault();
                 menuToggle.focus();
             }
         });
 
-        window.matchMedia('(min-width: 1024px)')
-            .addEventListener('change', cerrarMenu);
+        escritorio.addEventListener('change', cerrarMenu);
+        window.addEventListener('pageshow', cerrarMenu);
+
+        [categorias, cuenta].filter(Boolean).forEach((desplegable) => {
+            desplegable.addEventListener('toggle', () => {
+                if (!desplegable.open || !escritorio.matches) return;
+                [categorias, cuenta].forEach((otro) => {
+                    if (otro && otro !== desplegable) otro.open = false;
+                });
+            });
+        });
     }
 
     // CARRITO LATERAL
@@ -188,7 +402,7 @@ function iniciarByteStore() {
                 }
 
                 const response = await fetch(
-                    `/carrito/agregar/${encodeURIComponent(id)}`,
+                    form.action,
                     {
                         method: 'POST',
                         headers: {
@@ -201,8 +415,9 @@ function iniciarByteStore() {
                 );
 
                 if (!response.ok) {
+                    const fallo = await response.json().catch(() => ({}));
                     throw new Error(
-                        'No se pudo agregar el producto. Actualiza la página e inténtalo nuevamente.'
+                        Object.values(fallo.errors || {}).flat()[0] || fallo.message || 'No se pudo agregar el producto. Inténtalo nuevamente.'
                     );
                 }
 
@@ -220,7 +435,7 @@ function iniciarByteStore() {
                     contador.textContent = data.cantidad;
                 }
 
-                const panel = await fetch('/carrito/contenido', {
+                const panel = await fetch(contenido.dataset.url, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                     },
@@ -262,7 +477,6 @@ function iniciarByteStore() {
 function configurarVisibilidadPortada() {
     const portada = document.getElementById('inicio');
     const navbar = document.getElementById('navbarPrincipal');
-    const botonCarrito = document.getElementById('abrirCarrito');
 
     function mostrarElemento(elemento, visible, desplazamiento) {
         if (!elemento) return;
@@ -284,10 +498,11 @@ function configurarVisibilidadPortada() {
     let estadoAnterior = null;
 
     function actualizar() {
+        navbar?.classList.toggle('is-scrolled', window.scrollY > 16);
         // Sin portada, los controles siempre están visibles.
         // En el inicio aparecen cuando el video sale de la pantalla.
         const visible =
-            !portada || portada.getBoundingClientRect().bottom <= 1;
+            !portada || portada.getBoundingClientRect().bottom <= (navbar?.offsetHeight || 112) + 16;
 
         if (visible === estadoAnterior) return;
 
@@ -299,25 +514,8 @@ function configurarVisibilidadPortada() {
             '-translate-y-full'
         );
 
-        mostrarElemento(
-            botonCarrito,
-            visible,
-            'translate-y-4'
-        );
-
         if (!visible) {
-            const menu = document.getElementById('menuPrincipal');
-            const toggle = document.getElementById('menuToggle');
-            const categorias = document.getElementById('categoriasDropdown');
-
-            menu?.classList.add('hidden');
-
-            toggle?.setAttribute('aria-expanded', 'false');
-            toggle?.setAttribute('aria-label', 'Abrir menú');
-
-            if (categorias) {
-                categorias.open = false;
-            }
+            document.dispatchEvent(new Event('bytestore:cerrar-menu'));
         }
     }
 
@@ -347,9 +545,126 @@ function configurarVisibilidadPortada() {
 
 // INICIALIZACIÓN: CADA FUNCIÓN SE EJECUTA UNA SOLA VEZ
 
+function iniciarPagoYape() {
+    const form = document.querySelector('[data-payment-form]');
+    if (!form) return;
+    const archivo = form.querySelector('[data-payment-file]');
+    const vista = form.querySelector('[data-payment-preview]');
+    const boton = form.querySelector('[data-payment-submit]');
+    const texto = boton.textContent;
+    let imagenTemporal;
+    let enviando = false;
+
+    const tipoComprobante = form.querySelector('[data-payment-receipt-type]');
+    const metodoPago = document.querySelector('[data-payment-method]');
+    const documento = form.querySelector('[data-payment-document]');
+    const razonSocial = form.querySelector('[data-payment-business-name]');
+    const actualizarComprobante = () => {
+        const factura = tipoComprobante.value === 'factura';
+        documento.required = factura;
+        documento.pattern = factura ? '[0-9]{11}' : '(?:[0-9]{8}|[0-9]{11})';
+        form.querySelector('[data-payment-document-label]').textContent = factura ? 'RUC (11 dígitos)' : 'DNI o RUC (opcional)';
+        form.querySelector('[data-payment-business-label]').hidden = !factura;
+        razonSocial.disabled = !factura;
+        razonSocial.required = factura;
+    };
+    tipoComprobante.addEventListener('change', actualizarComprobante);
+    actualizarComprobante();
+
+    if (metodoPago) {
+        const actualizarMetodoPago = () => {
+            document.querySelectorAll('[data-payment-method-details]').forEach((detalle) => {
+                detalle.hidden = detalle.dataset.paymentMethodDetails !== metodoPago.value;
+            });
+        };
+        metodoPago.addEventListener('change', actualizarMetodoPago);
+        actualizarMetodoPago();
+    }
+
+    archivo.addEventListener('change', () => {
+        if (imagenTemporal) URL.revokeObjectURL(imagenTemporal);
+        vista.hidden = true;
+        vista.removeAttribute('src');
+        archivo.setCustomValidity('');
+        const imagen = archivo.files[0];
+        if (!imagen) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(imagen.type) || imagen.size > 5 * 1024 * 1024) {
+            archivo.setCustomValidity('Elige una imagen JPG, PNG o WebP de máximo 5 MB.');
+            archivo.reportValidity();
+            return;
+        }
+        imagenTemporal = URL.createObjectURL(imagen);
+        vista.src = imagenTemporal;
+        vista.hidden = false;
+    });
+
+    form.addEventListener('submit', (event) => {
+        if (enviando) { event.preventDefault(); return; }
+        enviando = true;
+        boton.disabled = true;
+        boton.textContent = 'Enviando tu constancia…';
+    });
+
+    window.addEventListener('pageshow', () => {
+        enviando = false;
+        boton.disabled = false;
+        boton.textContent = texto;
+        actualizarComprobante();
+    });
+}
+
+function iniciarAnimacionesDesplazamiento() {
+    const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!('IntersectionObserver' in window) || !HTMLElement.prototype.animate) return;
+
+    const animaciones = new Set();
+    let observador;
+
+    function configurar() {
+        observador?.disconnect();
+        animaciones.forEach((animacion) => animacion.cancel());
+        animaciones.clear();
+        if (movimientoReducido.matches) return;
+
+        observador = new IntersectionObserver((entradas) => {
+            entradas.forEach((entrada) => {
+                if (!entrada.isIntersecting) return;
+                const elemento = entrada.target;
+                observador.unobserve(elemento);
+                if (elemento.dataset.bsRevealed) return;
+                elemento.dataset.bsRevealed = 'true';
+                const animacion = elemento.animate([
+                    { opacity: 0, transform: 'translateY(18px)' },
+                    { opacity: 1, transform: 'translateY(0)' },
+                ], {
+                    duration: 450,
+                    delay: Number(elemento.dataset.bsRevealDelay || 0),
+                    easing: 'cubic-bezier(.2,.7,.3,1)',
+                    fill: 'backwards',
+                });
+                animaciones.add(animacion);
+                animacion.finished.catch(() => {}).finally(() => animaciones.delete(animacion));
+            });
+        }, { threshold: 0.08 });
+
+        document.querySelectorAll('main article, main section:not(#inicio):not(.bs-banners), main header, main .catalog-toolbar')
+            .forEach((elemento, indice) => {
+                if (elemento.querySelector('article') || elemento.dataset.bsRevealed) return;
+                elemento.dataset.bsRevealDelay = elemento.matches('article') ? String((indice % 4) * 55) : '0';
+                observador.observe(elemento);
+            });
+    }
+
+    configurar();
+    movimientoReducido.addEventListener('change', configurar);
+}
+
 function iniciarPagina() {
+    iniciarBuscadorCatalogo();
     configurarVisibilidadPortada();
     iniciarByteStore();
+    iniciarPagoYape();
+    iniciarAnimacionesDesplazamiento();
 }
 
 if (document.readyState === 'loading') {

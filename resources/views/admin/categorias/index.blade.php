@@ -1,9 +1,9 @@
-@extends('adminlte::page')
+@extends('layouts.admin')
 
 @section('title', 'Categorías')
 
 @section('content_header')
-<h1>Categorías</h1>
+    @include('partials.admin-heading', ['titulo' => 'Categorías', 'descripcion' => 'Organiza los productos para que tus clientes encuentren lo que buscan.'])
 @stop
 
 @section('content')
@@ -21,7 +21,7 @@
 
     <div class="card-body">
 
-        <table class="table table-bordered">
+        <div class="table-responsive"><table class="table bs-admin-list-table">
 
             <thead>
 
@@ -36,7 +36,7 @@
 
             <tbody>
 
-            @foreach($categorias as $categoria)
+            @forelse($categorias as $categoria)
 
             <tr>
 
@@ -72,11 +72,13 @@
 
             </tr>
 
-            @endforeach
+            @empty
+                <tr><td colspan="4" class="text-center text-muted py-4">Aún no hay categorías. Crea una para organizar los productos.</td></tr>
+            @endforelse
 
             </tbody>
 
-        </table>
+        </table></div>
 
     </div>
 

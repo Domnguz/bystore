@@ -14,11 +14,34 @@ use Throwable;
 
 class ProductoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $productos = Producto::with('categoria')->get();
-
-        return view('admin.productos.index', compact('productos'));
+        $filtros = $request->validate([
+            'buscar' => ['nullable', 'string', 'max:100'],
+            'categoria_id' => ['nullable', 'integer', Rule::exists(Categoria::class, 'id')],
+            'stock_bajo' => ['nullable', 'boolean'],
+        ]);
+        $stockBajoLimite = config('tienda.stock_bajo_limite', 5);
+        $consulta = Producto::with('categoria');
+        $buscar = trim($filtros['buscar'] ?? '');
+        if ($buscar !== '') {
+            $consulta->where(function ($query) use ($buscar) {
+                $patron = '%'.$buscar.'%';
+                $query->where('nombre', 'like', $patron)
+                    ->orWhere('marca', 'like', $patron)
+                    ->orWhere('modelo', 'like', $patron)
+                    ->orWhere('sku', 'like', $patron);
+            });
+        }
+        if (filled($filtros['categoria_id'] ?? null)) {
+            $consulta->where('categoria_id', $filtros['categoria_id']);
+        }
+        if ($request->boolean('stock_bajo')) {
+            $consulta->where('stock', '<=', $stockBajoLimite);
+        }
+        $productos = $consulta->orderBy('id')->paginate(20)->withQueryString();
+        $categorias = Categoria::orderBy('nombre')->get(['id', 'nombre']);
+        return view('admin.productos.index', compact('productos', 'categorias', 'filtros', 'stockBajoLimite'));
     }
 
     public function create()
@@ -26,6 +49,23 @@ class ProductoController extends Controller
         $categorias = Categoria::all();
 
         return view('admin.productos.create', compact('categorias'));
+    }
+
+    public function reponerStock(Request $request, int $id)
+    {
+        $datos = $request->validate([
+            'cantidad' => ['required', 'integer', 'min:1', 'max:10000'],
+        ]);
+
+        $producto = DB::transaction(function () use ($id, $datos) {
+            $producto = Producto::lockForUpdate()->findOrFail($id);
+            $producto->stock += (int) $datos['cantidad'];
+            $producto->save();
+
+            return $producto;
+        }, 3);
+
+        return back()->with('success', 'Se agregaron '.$datos['cantidad'].' unidades a “'.$producto->nombre.'”. Nuevo stock: '.$producto->stock.'.');
     }
 
     public function store(Request $request)
@@ -202,8 +242,14 @@ class ProductoController extends Controller
                 Rule::exists(Categoria::class, 'id'),
             ],
             'nombre' => ['required', 'string', 'max:255'],
+            'sku' => ['nullable', 'string', 'max:100', Rule::unique('productos', 'sku')->ignore($producto?->id)],
+            'marca' => ['nullable', 'string', 'max:100'],
+            'modelo' => ['nullable', 'string', 'max:150'],
+            'especificaciones' => ['nullable', 'string', 'max:10000'],
+            'compatibilidad' => ['nullable', 'string', 'max:5000'],
+            'garantia' => ['nullable', 'string', 'max:5000'],
             'descripcion' => ['nullable', 'string'],
-            'precio' => ['required', 'numeric', 'min:0'],
+            'precio' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:999999.99'],
             'stock' => ['required', 'integer', 'min:0'],
 
             'imagen' => [
@@ -240,6 +286,7 @@ class ProductoController extends Controller
             'descripcion',
             'precio',
             'stock',
+            'sku', 'marca', 'modelo', 'especificaciones', 'compatibilidad', 'garantia',
         ]);
     }
 
@@ -249,7 +296,7 @@ class ProductoController extends Controller
     ): string {
         $ruta = $foto->store('productos', 'public');
 
-        if (!$ruta) {
+        if (! $ruta) {
             throw new \RuntimeException(
                 'No se pudo guardar la imagen.'
             );

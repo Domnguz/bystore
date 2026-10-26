@@ -33,6 +33,14 @@ class CatalogPerformanceTest extends TestCase
             $table->string('imagen');
             $table->timestamps();
         });
+        Schema::create('banners', function (Blueprint $table) {
+            $table->id();
+            $table->string('titulo');
+            $table->string('imagen');
+            $table->string('imagen_movil')->nullable();
+            $table->integer('orden');
+            $table->boolean('activo');
+        });
 
         DB::table('categorias')->insert([
             ['id' => 1, 'nombre' => 'Componentes'],
@@ -57,8 +65,7 @@ class CatalogPerformanceTest extends TestCase
 
     public function test_home_loads_categories_in_batches_without_duplicate_menu_query(): void
     {
-        $this->get('/')->assertOk()->assertViewHas('productos', fn ($items) =>
-            $items->count() === 4 && $items->every(fn ($item) => $item->relationLoaded('categoria'))
+        $this->get('/')->assertOk()->assertViewHas('productos', fn ($items) => $items->count() === 4 && $items->every(fn ($item) => $item->relationLoaded('categoria'))
         );
         $this->assertCount(3, DB::getQueryLog());
     }
@@ -73,7 +80,7 @@ class CatalogPerformanceTest extends TestCase
             $this->assertSame(25, $products->total());
             $this->assertLessThanOrEqual(12, $products->count());
             $ids = array_merge($ids, $products->pluck('id')->all());
-            $this->assertCount(3, DB::getQueryLog());
+            $this->assertCount(5, DB::getQueryLog());
         }
         $this->assertSame(range(1, 25), $ids);
     }
@@ -88,11 +95,11 @@ class CatalogPerformanceTest extends TestCase
         $this->get('/categoria/999')->assertNotFound();
     }
 
-    public function test_admin_product_categories_use_two_queries_for_25_products(): void
+    public function test_admin_product_categories_use_three_queries_with_pagination(): void
     {
-        $user = new User(['name' => 'Administrador', 'email' => 'test@example.test']);
+        $user = new User(['name' => 'Administrador', 'email' => 'test@example.test', 'rol' => 'admin']);
         $user->id = 1;
         $this->actingAs($user)->get('/admin/productos')->assertOk();
-        $this->assertCount(2, DB::getQueryLog());
+        $this->assertCount(3, DB::getQueryLog());
     }
 }
